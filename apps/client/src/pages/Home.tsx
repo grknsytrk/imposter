@@ -4,28 +4,29 @@ import { useGameStore } from '../store/useGameStore';
 import { Button } from '../components/ui/button';
 import {
     Fingerprint,
-    Ghost,
-    Cat,
-    Skull,
-    Crown,
-    Zap,
-    Dog,
-    Rocket,
-    Gamepad2,
+    ShieldAlert,
+    Eye,
+    Radio,
+    Activity,
+    Database,
+    Cpu,
+    Scan,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Layers,
+    Lock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AVATARS = [
-    { id: 'ghost', icon: Ghost, label: 'The Phantom' },
-    { id: 'cat', icon: Cat, label: 'Night Prowler' },
-    { id: 'skull', icon: Skull, label: 'Bone Collector' },
-    { id: 'crown', icon: Crown, label: 'Apex Ruler' },
-    { id: 'zap', icon: Zap, label: 'Storm Bringer' },
-    { id: 'dog', icon: Dog, label: 'Loyal Guardian' },
-    { id: 'rocket', icon: Rocket, label: 'Void Explorer' },
-    { id: 'gamepad', icon: Gamepad2, label: 'System Glitch' },
+    { id: 'eye', icon: Eye, label: 'OBSERVER' },
+    { id: 'fingerprint', icon: Fingerprint, label: 'UNKNOWN_UNIT' },
+    { id: 'shield', icon: ShieldAlert, label: 'ENFORCER' },
+    { id: 'radio', icon: Radio, label: 'SIGNAL_NODE' },
+    { id: 'activity', icon: Activity, label: 'PULSE_TRACE' },
+    { id: 'database', icon: Database, label: 'ARCHIVE_CORE' },
+    { id: 'cpu', icon: Cpu, label: 'SYSTEM_MAIN' },
+    { id: 'scan', icon: Scan, label: 'TARGET_ACQ' },
 ];
 
 export default function Home() {
@@ -46,110 +47,102 @@ export default function Home() {
     };
 
     const containerVariants = {
-        hidden: { opacity: 0, y: 30 },
+        hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            y: 0,
             transition: {
-                duration: 0.6,
-                ease: [0.22, 1, 0.36, 1] as const,
-                staggerChildren: 0.15,
+                duration: 1,
+                staggerChildren: 0.2,
             },
         },
     };
 
     const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 },
+        hidden: { opacity: 0, scale: 0.98 },
+        visible: { opacity: 1, scale: 1 },
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-10 relative overflow-hidden">
-            {/* Background Grid */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_rgba(138,43,226,0.08),_transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,_rgba(219,112,147,0.08),_transparent_50%)]" />
-                <div className="absolute inset-0 opacity-[0.02]" style={{
-                    backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
-                }} />
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
+            <div className="scanline-overlay" />
+
+            {/* Ambient Atmosphere */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(255,255,255,0.01)_0%,_transparent_70%)]" />
             </div>
 
             <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="max-w-md w-full z-10"
+                className="max-w-xl w-full z-10 space-y-12"
             >
-                <div className="text-center mb-10">
+                <div className="text-center space-y-6">
                     <motion.div
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="inline-flex items-center justify-center mb-8"
+                        variants={itemVariants}
+                        className="inline-block relative"
                     >
-                        <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
-                            <rect x="20" y="20" width="60" height="60" rx="16" transform="rotate(45 50 50)" className="fill-primary/20 stroke-primary" strokeWidth="2" />
-                            <rect x="35" y="35" width="30" height="30" rx="8" transform="rotate(45 50 50)" className="fill-white" />
-                            <path d="M50 38L56 50H44L50 38Z" fill="var(--primary)" />
-                            <circle cx="50" cy="58" r="4" fill="var(--primary)" />
-                        </svg>
+                        <div className="w-24 h-24 border border-white/5 flex items-center justify-center bg-white/[0.02] relative group">
+                            <Layers className="w-10 h-10 text-white/20 group-hover:text-white/40 transition-colors" />
+                            <div className="absolute -inset-4 border border-white/[0.02] animate-spin-slow pointer-events-none" />
+                        </div>
                     </motion.div>
 
-                    <h1 className="text-6xl font-black tracking-tight title-gradient mb-4">
-                        IMPOSTER
-                    </h1>
-                    <p className="text-muted-foreground font-medium tracking-[0.2em] text-xs uppercase opacity-70">
-                        FIND THE IMPOSTER. STAY ALIVE.
-                    </p>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                        <h1 className="text-6xl font-heading font-bold tracking-tighter text-white uppercase">
+                            Council<span className="text-primary/30">_</span>Internal
+                        </h1>
+                        <p className="system-label tracking-[0.5em] text-white/40">
+                            Protocol 09 // Authorized Personnel Only
+                        </p>
+                    </motion.div>
                 </div>
 
                 <motion.div
                     variants={itemVariants}
-                    className="glass-card p-10 rounded-[3rem] space-y-8"
+                    className="premium-card bg-card/40 backdrop-blur-xl p-12 space-y-10 shadow-2xl relative overflow-hidden"
                 >
+                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
                     {/* Avatar Selection */}
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center gap-6">
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
+                    <div className="space-y-6 text-center">
+                        <span className="system-label">Unit_Designation</span>
+                        <div className="flex items-center justify-center gap-10">
+                            <button
                                 onClick={prevAvatar}
-                                className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                                className="p-3 border border-white/5 hover:bg-white/5 text-white/20 hover:text-white transition-all"
                             >
                                 <ChevronLeft className="w-5 h-5" />
-                            </motion.button>
+                            </button>
                             <motion.div
                                 key={avatarIndex}
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white shadow-2xl shadow-primary/30"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="w-20 h-20 border border-white/10 flex items-center justify-center bg-white/[0.03]"
                             >
-                                <CurrentAvatarIcon className="w-12 h-12" />
+                                <CurrentAvatarIcon className="w-8 h-8 text-white/80" />
                             </motion.div>
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
+                            <button
                                 onClick={nextAvatar}
-                                className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                                className="p-3 border border-white/5 hover:bg-white/5 text-white/20 hover:text-white transition-all"
                             >
                                 <ChevronRight className="w-5 h-5" />
-                            </motion.button>
+                            </button>
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">{AVATARS[avatarIndex].label}</span>
+                        <p className="font-mono text-[10px] tracking-[0.3em] text-white/40 uppercase">{AVATARS[avatarIndex].label}</p>
                     </div>
 
                     {/* Name Input */}
-                    <div className="space-y-3">
-                        <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold px-4">
-                            Your Name
-                        </label>
+                    <div className="space-y-4">
+                        <label className="system-label px-1">Identity_String</label>
                         <div className="relative">
-                            <Fingerprint className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/40" />
+                            <Fingerprint className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                             <input
                                 type="text"
-                                placeholder="Enter your name..."
-                                className="flex h-16 w-full rounded-[2rem] border border-white/10 bg-black/20 px-14 py-2 text-base font-bold placeholder:text-white/20 text-white focus-visible:outline-none focus:border-primary/50 focus:bg-black/40 transition-all shadow-inner"
+                                placeholder="Input Aliaz..."
+                                className="premium-input w-full pl-14 h-16 uppercase tracking-widest text-sm"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => setName(e.target.value.toUpperCase())}
                                 onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
                             />
                         </div>
@@ -158,18 +151,21 @@ export default function Home() {
                     <Button
                         onClick={handleConnect}
                         disabled={!name.trim()}
+                        variant="premium"
                         size="lg"
-                        className="w-full h-16 rounded-[2rem] text-lg font-black tracking-wider bouncy-hover bg-gradient-to-r from-primary to-rose-500 text-white shadow-lg shadow-primary/20 border-none hover:shadow-primary/40 hover:scale-105 mt-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        className="w-full h-16 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
                     >
-                        <span className="flex items-center gap-3">
-                            PLAY <Zap className="w-5 h-5 fill-current" />
-                        </span>
+                        INITIALIZE_UPLINK
                     </Button>
                 </motion.div>
 
-                <p className="text-center mt-10 text-[10px] text-muted-foreground/60 font-bold uppercase tracking-[0.2em]">
-                    Can you find the imposter?
-                </p>
+                <div className="flex justify-between items-center opacity-20 pointer-events-none">
+                    <div className="flex flex-col gap-1">
+                        <span className="system-label text-[8px]">Secure_Shell</span>
+                        <span className="font-mono text-[8px]">PASSIVE_STUB / READY</span>
+                    </div>
+                    <Lock className="w-4 h-4" />
+                </div>
             </motion.div>
         </div>
     );
