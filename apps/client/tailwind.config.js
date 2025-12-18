@@ -17,6 +17,11 @@ module.exports = {
             },
         },
         extend: {
+            fontFamily: {
+                sans: ["Nunito", "sans-serif"],
+                heading: ["Titan One", "cursive"],
+                hand: ["Patrick Hand", "cursive"],
+            },
             colors: {
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
