@@ -1,6 +1,24 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
-import { Player, Room, ChatMessage } from '@imposter/shared';
+import { Player, Room, ChatMessage, GamePhase } from '@imposter/shared';
+
+// Client tarafında kullanılan game state (server'dan gelen)
+interface ClientGameState {
+    phase: GamePhase;
+    category: string;
+    word: string | null; // Imposter için null
+    isImposter: boolean;
+    currentTurnIndex: number;
+    turnOrder: string[];
+    turnTimeLeft: number;
+    phaseTimeLeft: number;
+    roundNumber: number;
+    hints: Record<string, string>;
+    votes: Record<string, string>;
+    eliminatedPlayerId?: string;
+    winner?: 'CITIZENS' | 'IMPOSTER';
+    imposterId?: string; // Sadece oyun bitince gösterilir
+}
 
 interface GameState {
     socket: Socket | null;
@@ -10,13 +28,17 @@ interface GameState {
     rooms: any[];
     messages: ChatMessage[];
     toast: { message: string; type: 'error' | 'success' | 'info' } | null;
+    gameState: ClientGameState | null;
 
     connect: (name: string, avatar: string) => void;
-    createRoom: (name: string, password?: string) => void;
+    createRoom: (name: string, password?: string, category?: string) => void;
     joinRoom: (roomId: string, password?: string) => void;
     startGame: () => void;
     leaveRoom: () => void;
     sendMessage: (content: string) => void;
+    submitHint: (hint: string) => void;
+    submitVote: (playerId: string) => void;
+    playAgain: () => void;
     refreshRooms: () => void;
     showToast: (message: string, type?: 'error' | 'success' | 'info') => void;
     clearToast: () => void;
@@ -30,6 +52,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     rooms: [],
     messages: [],
     toast: null,
+    gameState: null,
 
     connect: (name: string, avatar: string) => {
         if (get().socket) return;
@@ -42,15 +65,19 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
 
         socket.on('disconnect', () => {
-            set({ isConnected: false });
+            set({ isConnected: false, gameState: null });
         });
 
         socket.on('player_status', (player: Player) => {
             set({ player });
         });
 
-        socket.on('room_update', (room: Room) => {
-            set({ room });
+        socket.on('room_update', (room: Room | null) => {
+            if (room === null) {
+                set({ room: null, gameState: null, messages: [] });
+            } else {
+                set({ room });
+            }
         });
 
         socket.on('room_list', (rooms: any[]) => {
@@ -67,16 +94,20 @@ export const useGameStore = create<GameState>((set, get) => ({
             }));
         });
 
+        socket.on('game_state', (gameState: ClientGameState | null) => {
+            set({ gameState });
+        });
+
         set({ socket });
     },
 
-    createRoom: (name: string, password?: string) => {
-        set({ messages: [] });
-        get().socket?.emit('create_room', { name, password });
+    createRoom: (name: string, password?: string, category?: string) => {
+        set({ messages: [], gameState: null });
+        get().socket?.emit('create_room', { name, password, category });
     },
 
     joinRoom: (roomId: string, password?: string) => {
-        set({ messages: [] });
+        set({ messages: [], gameState: null });
         get().socket?.emit('join_room', { roomId, password });
     },
 
@@ -85,12 +116,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
 
     leaveRoom: () => {
-        set({ messages: [] });
+        set({ messages: [], gameState: null });
         get().socket?.emit('leave_room');
     },
 
     sendMessage: (content: string) => {
         get().socket?.emit('send_message', content);
+    },
+
+    submitHint: (hint: string) => {
+        get().socket?.emit('submit_hint', hint);
+    },
+
+    submitVote: (playerId: string) => {
+        get().socket?.emit('submit_vote', playerId);
+    },
+
+    playAgain: () => {
+        get().socket?.emit('play_again');
     },
 
     refreshRooms: () => {

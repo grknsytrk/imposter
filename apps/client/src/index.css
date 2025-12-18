@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Titan+One&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -34,146 +34,187 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --font-sans: "IBM Plex Sans", sans-serif;
-  --font-heading: "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Nunito", sans-serif;
+  --font-heading: "Titan One", cursive;
 }
 
 :root {
-  /* Premium Dark Neutral Palette - Avoid Pure Black */
-  --background: 220 15% 7%;
-  /* #0b0d0f */
-  --foreground: 220 10% 90%;
-  /* #e2e4e7 */
+  /* CLASH / SUPERCELL INSPIRED PALETTE */
 
-  --card: 220 12% 10%;
-  /* #111417 */
-  --card-foreground: 220 10% 90%;
+  /* Background: Vivid Arena Blue */
+  --background: 215 100% 35%;
+  /* #0051ff - Bright Blue */
+  --foreground: 0 0% 100%;
+  /* White text on dark bg */
 
-  --popover: 220 12% 10%;
-  --popover-foreground: 220 10% 90%;
+  /* Surface: Crisp White with a slight blue tint */
+  --card: 210 100% 98%;
+  --card-foreground: 222 47% 11%;
+  /* Dark text on cards */
 
-  /* System Silver / Off-white */
-  --primary: 220 10% 98%;
-  --primary-foreground: 220 20% 10%;
+  --popover: 210 100% 98%;
+  --popover-foreground: 222 47% 11%;
 
-  /* Subdued Slate */
-  --secondary: 220 10% 15%;
-  --secondary-foreground: 220 10% 80%;
+  /* Primary: GOLD (Classic "Play" Button) */
+  --primary: 45 100% 50%;
+  /* #ffcc00 */
+  --primary-foreground: 20 80% 25%;
+  /* Dark Brown text for contrast on Gold */
 
-  --muted: 220 10% 12%;
-  --muted-foreground: 220 10% 50%;
+  /* Secondary: Electric Cyan/Blue */
+  --secondary: 190 90% 50%;
+  /* #00d9ff */
+  --secondary-foreground: 222 47% 11%;
 
-  /* Critical Alert Red (Used Sparingly) */
-  --accent: 0 84% 60%;
+  /* Muted: Lighter Blue for backgrounds/dividers */
+  --muted: 215 50% 30%;
+  --muted-foreground: 215 80% 85%;
+
+  /* Accent: Hot Pink/Magenta */
+  --accent: 320 90% 60%;
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 62% 30%;
+  /* Destructive: Cartoon Red */
+  --destructive: 0 90% 55%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 220 10% 18%;
-  --input: 220 10% 14%;
-  --ring: 220 10% 30%;
+  --border: 215 80% 20%;
+  /* Dark Blue border color */
+  --input: 210 20% 90%;
+  --ring: 45 100% 50%;
 
-  --radius: 0px;
-  /* Maintain authoritative sharp edges */
+  --radius: 1.5rem;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
+  }
+
+  /* Tek scrollbar: sadece html/body scroll etsin, içerideki container'lar scroll oluşturmasın */
+  html {
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen font-sans antialiased overflow-x-hidden selection:bg-primary selection:text-primary-foreground;
-    line-height: 1.6;
-    letter-spacing: 0.01em;
+    @apply bg-background text-foreground min-h-screen font-sans antialiased;
+    overflow: visible;
+    background-image: radial-gradient(circle at center, hsl(215 85% 55%) 0%, hsl(215 85% 40%) 100%);
+    cursor: default;
   }
 
+  #root {
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  /* Headings with thick text stroke */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    @apply font-heading tracking-tight font-bold;
-  }
-
-  /* Subdued atmosphere texture */
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 100%),
-      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3BaseFilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 1;
-    mix-blend-mode: overlay;
+    @apply font-heading tracking-wide text-white;
+    text-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
   }
 }
 
 @layer utilities {
-  .glass-panel {
-    @apply bg-card/80 backdrop-blur-md border border-white/5;
-  }
 
+  /* GAME CARD STYLE */
   .premium-card {
-    @apply bg-card border border-border relative transition-all duration-300;
+    @apply bg-card text-card-foreground rounded-3xl relative overflow-hidden;
+    border: 4px solid hsl(215 60% 20%);
+    /* Thick dark border */
+    box-shadow:
+      0 6px 0 0 hsl(215 60% 15%),
+      /* Hard 3D shadow */
+      0 12px 20px rgba(0, 0, 0, 0.2);
+    /* Soft ambient shadow */
   }
 
+  /* Inner Card Content Wrapper */
   .premium-card::after {
     content: "";
     position: absolute;
     inset: 0;
-    border: 1px solid white;
-    opacity: 0;
-    transition: opacity 0.3s ease;
     pointer-events: none;
+    border-radius: calc(1.5rem - 4px);
+    box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.5);
+    /* Highlight on top edge */
   }
 
-  .premium-card:hover::after {
-    opacity: 0.05;
+  /* Texture overlay - subtle diagonal lines */
+  .card-texture {
+    background-image: repeating-linear-gradient(45deg,
+        rgba(0, 0, 0, 0.02) 0px,
+        rgba(0, 0, 0, 0.02) 5px,
+        transparent 5px,
+        transparent 10px);
+    background-size: 100% 100%;
   }
 
+  /* INPUTS */
   .premium-input {
-    @apply bg-input/50 border border-border px-4 py-3 font-mono text-sm focus:border-primary/50 outline-none transition-all;
+    @apply bg-white border-4 border-slate-300 rounded-xl px-5 py-3 font-bold text-lg text-slate-800 shadow-inner overflow-hidden transition-all;
+    /* Focus state managed via tailwind focus: classes usually, but let's enforce */
   }
 
+  .premium-input:focus {
+    @apply border-primary outline-none ring-0 scale-[1.02];
+  }
+
+  /* BUTTONS - JELLY / 3D STYLE */
   .premium-button {
-    @apply relative overflow-hidden px-6 py-2 bg-secondary text-secondary-foreground font-heading font-semibold tracking-wider uppercase text-xs transition-all hover:bg-white/10 active:scale-[0.98] disabled:opacity-50;
+    @apply relative overflow-visible px-6 py-4 rounded-xl font-heading font-black tracking-wider uppercase text-sm transition-transform active:translate-y-1 active:shadow-none select-none;
+    /* We handle colors in variants, but base shape is here */
   }
 
+  /* Primary Button (Gold) overrides */
   .premium-button-primary {
-    @apply bg-primary text-primary-foreground hover:bg-white/90;
+    @apply bg-primary text-primary-foreground border-b-4 border-yellow-600;
   }
 
+  .premium-button-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
+
+  .premium-button-primary:active {
+    transform: translateY(2px);
+    border-bottom-width: 0;
+    margin-top: 4px;
+    /* compensate for border removal visually */
+  }
+
+  /* Text tweaks */
   .text-subtle {
-    @apply text-muted-foreground font-mono text-[10px] tracking-[0.2em] uppercase;
+    @apply text-slate-500 font-black text-xs tracking-wider uppercase;
   }
 
-  .system-label {
-    @apply font-mono text-[10px] tracking-[0.1em] text-white/40 uppercase;
+  .badge {
+    @apply px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2;
   }
 
-  /* Soft scanline that isn't distracting */
-  .scanline-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom,
-        transparent 50%,
-        rgba(0, 0, 0, 0.05) 51%,
-        transparent 51%);
-    background-size: 100% 4px;
-    pointer-events: none;
-    z-index: 50;
-    opacity: 0.5;
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(215 60% 70%);
+    border-radius: 5px;
+    border: 2px solid hsl(215 60% 50%);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215 60% 60%);
   }
 }

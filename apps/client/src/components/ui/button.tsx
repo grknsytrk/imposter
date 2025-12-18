@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center whitespace-nowrap rounded-none text-[10px] font-heading font-bold uppercase tracking-[0.2em] transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+    "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-base font-heading font-black tracking-wide transition-all duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background select-none active:scale-95",
     {
         variants: {
             variant: {
-                default: "bg-primary text-primary-foreground hover:bg-white/90",
+                default: "bg-primary text-primary-foreground border-b-4 border-yellow-600 hover:brightness-110 active:border-b-0 active:translate-y-1",
                 destructive:
-                    "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                    "bg-destructive text-destructive-foreground border-b-4 border-red-800 hover:brightness-110 active:border-b-0 active:translate-y-1",
                 outline:
-                    "border border-white/10 bg-transparent hover:bg-white/5 hover:border-white/20 text-white/70 hover:text-white",
+                    "border-4 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:border-b-0 active:translate-y-1 active:border-t-4",
                 secondary:
-                    "bg-white/5 text-white/80 border border-white/5 hover:border-white/20 hover:bg-white/10",
-                ghost: "hover:bg-white/5 text-white/50 hover:text-white",
+                    "bg-secondary text-secondary-foreground border-b-4 border-cyan-700 hover:brightness-110 active:border-b-0 active:translate-y-1",
+                ghost: "hover:bg-slate-100 hover:text-slate-900 border-b-4 border-transparent hover:border-slate-200",
                 link: "text-primary underline-offset-4 hover:underline",
-                premium: "bg-primary text-primary-foreground shadow-[0_4px_20px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_8px_30px_-10px_rgba(255,255,255,0.4)]",
+                premium: "bg-gradient-to-b from-primary to-orange-400 text-white border-b-4 border-orange-700 shadow-lg hover:brightness-110 active:border-b-0 active:translate-y-1",
             },
             size: {
-                default: "h-12 px-8",
-                sm: "h-9 px-4",
-                lg: "h-14 px-10 text-[11px] tracking-[0.3em]",
-                icon: "h-10 w-10",
+                default: "h-14 px-6",
+                sm: "h-10 px-4 text-xs",
+                lg: "h-16 px-8 text-lg",
+                icon: "h-12 w-12",
             },
         },
         defaultVariants: {
@@ -41,14 +41,38 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant, size, asChild = false, ...props }, ref) => {
+    ({ className, variant, size, asChild = false, children, ...props }, ref) => {
         const Comp = asChild ? Slot : "button"
+
+        // Only apply shine structure if not using Slot (simplified for safety)
+        if (asChild) {
+            return (
+                <Comp
+                    className={cn(buttonVariants({ variant, size, className }))}
+                    ref={ref}
+                    {...props}
+                >
+                    {children}
+                </Comp>
+            )
+        }
+
         return (
-            <Comp
-                className={cn(buttonVariants({ variant, size, className }))}
+            <button
+                className={cn(buttonVariants({ variant, size, className }), "group relative overflow-visible")}
                 ref={ref}
                 {...props}
-            />
+            >
+                {/* Shine Container - Clipped */}
+                <span className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
+                    <span className="absolute inset-0 bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[200%] transition-transform duration-1000 ease-in-out" />
+                </span>
+
+                {/* Content */}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                    {children}
+                </span>
+            </button>
         )
     }
 )
