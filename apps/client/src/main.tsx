@@ -24,13 +24,13 @@ function AuthWrapper() {
 
   // Auto-connect when profile is ready
   useEffect(() => {
-    if (initialized && profile && !isConnected && !connectionAttempted.current) {
+    if (initialized && profile && user && !isConnected && !connectionAttempted.current) {
       connectionAttempted.current = true;
       const AVATAR_IDS = ['ghost', 'cat', 'dog', 'star', 'zap', 'heart', 'music', 'smile'];
       const avatarToUse = AVATAR_IDS.includes(profile.avatar) ? profile.avatar : 'ghost';
-      connect(profile.username, avatarToUse);
+      connect(profile.username, avatarToUse, user.id); // Pass userId for single session enforcement
     }
-  }, [initialized, profile, isConnected, connect]);
+  }, [initialized, profile, user, isConnected, connect]);
 
   // Track when first connection is made
   useEffect(() => {

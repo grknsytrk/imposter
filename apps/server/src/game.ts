@@ -6,6 +6,7 @@ export class GameLogic {
     private players: Map<string, Player> = new Map();
     private rooms: Map<string, Room> = new Map();
     private timers: Map<string, NodeJS.Timeout> = new Map();
+    private userSockets: Map<string, string> = new Map(); // userId -> socketId (for single session enforcement)
     private io: Server | null = null;
 
     constructor() { }
@@ -336,17 +337,32 @@ export class GameLogic {
         this.io = io;
         console.log('Client connected:', socket.id);
 
-        socket.on('join_game', ({ name, avatar }: { name: string; avatar: string }) => {
+        socket.on('join_game', ({ name, avatar, userId }: { name: string; avatar: string; userId?: string }) => {
+            // Single session enforcement: if same userId already connected, disconnect old socket
+            if (userId) {
+                const existingSocketId = this.userSockets.get(userId);
+                if (existingSocketId && existingSocketId !== socket.id) {
+                    const existingSocket = io.sockets.sockets.get(existingSocketId);
+                    if (existingSocket) {
+                        existingSocket.emit('session_replaced', 'Another session took over');
+                        existingSocket.disconnect(true);
+                        console.log(`Session replaced for user ${userId}: ${existingSocketId} -> ${socket.id}`);
+                    }
+                }
+                this.userSockets.set(userId, socket.id);
+            }
+
             const player: Player = {
                 id: socket.id,
                 name,
                 avatar: avatar || 'ghost',
-                isReady: false
+                isReady: false,
+                userId: userId // Store userId for cleanup on disconnect
             };
             this.players.set(socket.id, player);
             socket.emit('player_status', player);
             socket.emit('room_list', this.getRoomList());
-            console.log(`Player ${name} joined the lobby`);
+            console.log(`Player ${name} joined the lobby${userId ? ` (userId: ${userId})` : ''}`);
         });
 
         socket.on('create_room', ({ name, password, category }: { name: string; password?: string; category?: string }) => {
@@ -400,6 +416,17 @@ export class GameLogic {
 
         socket.on('disconnect', () => {
             console.log('Client disconnected:', socket.id);
+            const player = this.players.get(socket.id);
+
+            // Clean up userSockets map
+            if (player?.userId) {
+                const currentSocketId = this.userSockets.get(player.userId);
+                // Only delete if this socket is still the active one for this userId
+                if (currentSocketId === socket.id) {
+                    this.userSockets.delete(player.userId);
+                }
+            }
+
             this.players.delete(socket.id);
 
             this.rooms.forEach((room, roomId) => {
