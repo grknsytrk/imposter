@@ -73,10 +73,10 @@ export function AuthPage() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <h1 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-lg">
-                        IMPOSTER <span className="text-primary">GAME</span>
+                        AMONG <span className="text-primary">LIES</span>
                     </h1>
                     <p className="text-white/70 mt-2 font-bold uppercase tracking-widest text-sm">
-                        Find the Imposter
+                        Find the Liar
                     </p>
                 </div>
 
@@ -295,10 +295,10 @@ export function AuthPage() {
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <Gamepad2 className="w-5 h-5 text-primary" />
-                                        <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Welcome to Imposter Game!</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Welcome to Among Lies!</h3>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                                        By accessing and playing Imposter Game, you agree to be bound by these Terms of Service.
+                                        By accessing and playing Among Lies, you agree to be bound by these Terms of Service.
                                         Please read them carefully before using our platform.
                                     </p>
                                 </section>
@@ -334,7 +334,7 @@ export function AuthPage() {
                                         <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Disclaimer</h3>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                                        Imposter Game is provided "as is" without warranties. We reserve the right to modify
+                                        Among Lies is provided "as is" without warranties. We reserve the right to modify
                                         or discontinue the service at any time. Game data may be reset during updates.
                                     </p>
                                 </section>

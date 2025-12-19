@@ -229,11 +229,11 @@ function App() {
                 </div>
                 <div>
                   <h2 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-[0_4px_0_rgba(0,0,0,0.2)] stroke-black leading-none">
-                    IMPOSTER <span className="text-primary">GAME</span>
+                    AMONG <span className="text-primary">LIES</span>
                   </h2>
                   <div className="flex items-center gap-2 bg-purple-900/30 dark:bg-violet-900/40 backdrop-blur-md px-4 py-1.5 rounded-full w-fit mt-1 border border-white/10">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
-                    <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest pl-1">Find the Imposter</span>
+                    <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest pl-1">Find the Liar</span>
                   </div>
                 </div>
               </div>

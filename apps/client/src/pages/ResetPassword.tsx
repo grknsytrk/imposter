@@ -72,7 +72,7 @@ export function ResetPassword() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <h1 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-lg">
-                        IMPOSTER <span className="text-primary">GAME</span>
+                        AMONG <span className="text-primary">LIES</span>
                     </h1>
                     <p className="text-white/70 mt-2 font-bold uppercase tracking-widest text-sm">
                         Reset Your Password

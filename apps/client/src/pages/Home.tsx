@@ -81,10 +81,10 @@ export default function Home() {
 
                     <motion.div variants={itemVariants} className="space-y-1">
                         <h1 className="text-6xl font-heading font-black text-white tracking-widest drop-shadow-[0_4px_0_rgba(0,0,0,0.3)] stroke-black">
-                            IMPOSTER
+                            AMONG <span className="text-primary">LIES</span>
                         </h1>
                         <p className="text-xl text-primary-foreground/80 font-heading tracking-wide uppercase">
-                            Party Game of Deception
+                            Find the Liar
                         </p>
                     </motion.div>
                 </div>
