@@ -118,7 +118,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
 
     leaveRoom: () => {
-        set({ messages: [], gameState: null });
+        set({ messages: [], gameState: null, room: null });
         get().socket?.emit('leave_room');
     },
 
