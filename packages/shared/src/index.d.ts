@@ -9,6 +9,7 @@ export type Player = {
     isEliminated?: boolean;
     hint?: string;
     hasVoted?: boolean;
+    userId?: string;
 };
 export type GamePhase = 'LOBBY' | 'ROLE_REVEAL' | 'HINT_ROUND' | 'DISCUSSION' | 'VOTING' | 'VOTE_RESULT' | 'GAME_OVER';
 export type GameStatus = 'LOBBY' | 'PLAYING' | 'ENDED';

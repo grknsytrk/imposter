@@ -30,7 +30,7 @@ interface GameState {
     toast: { message: string; type: 'error' | 'success' | 'info' } | null;
     gameState: ClientGameState | null;
 
-    connect: (name: string, avatar: string) => void;
+    connect: (name: string, avatar: string, userId?: string) => void;
     disconnect: () => void;
     createRoom: (name: string, password?: string, category?: string) => void;
     joinRoom: (roomId: string, password?: string) => void;
@@ -55,7 +55,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     toast: null,
     gameState: null,
 
-    connect: (name: string, avatar: string) => {
+    connect: (name: string, avatar: string, userId?: string) => {
         if (get().socket) return;
 
         // Production'da farklı domain, development'ta aynı origin
@@ -64,7 +64,22 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         socket.on('connect', () => {
             set({ isConnected: true });
-            socket.emit('join_game', { name, avatar });
+            socket.emit('join_game', { name, avatar, userId });
+        });
+
+        // Single session enforcement: another tab took over
+        socket.on('session_replaced', (message: string) => {
+            get().showToast(message || 'Another session took over', 'error');
+            socket.disconnect();
+            set({
+                socket: null,
+                isConnected: false,
+                player: null,
+                room: null,
+                rooms: [],
+                messages: [],
+                gameState: null
+            });
         });
 
         socket.on('disconnect', () => {

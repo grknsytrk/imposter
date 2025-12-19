@@ -12,6 +12,7 @@ export type Player = {
     isEliminated?: boolean;
     hint?: string; // İpucu turunda verilen ipucu
     hasVoted?: boolean;
+    userId?: string; // Supabase user ID for single session enforcement
 };
 
 // ==================== GAME PHASE ====================
