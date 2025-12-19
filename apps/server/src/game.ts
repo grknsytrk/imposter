@@ -201,19 +201,30 @@ export class GameLogic {
         const allHintsGiven = activePlayers.every(id => room.gameState!.hints[id]);
 
         if (allHintsGiven) {
-            // Eğer henüz tüm turlar bitmemişse, sonraki tura geç
-            const currentHintRound = room.gameState.roundNumber;
-            if (currentHintRound < GAME_CONFIG.HINT_ROUNDS) {
-                // Sonraki hint round'a geç
-                room.gameState.roundNumber++;
-                room.gameState.currentTurnIndex = 0;
-                room.gameState.hints = {}; // Hint'leri temizle
-                room.players.forEach(p => p.hint = undefined);
-                this.startHintTurn(room);
-                return;
-            }
-            // Tüm turlar bitti, tartışmaya geç
-            this.transitionToPhase(room, 'DISCUSSION');
+            // Son hint'i göstermek için 3 saniye bekle
+            room.gameState.phaseTimeLeft = 3;
+            this.broadcastGameState(room);
+
+            this.startPhaseTimer(room.id, 3,
+                () => {
+                    room.gameState!.phaseTimeLeft--;
+                    this.broadcastGameState(room);
+                },
+                () => {
+                    const currentHintRound = room.gameState!.roundNumber;
+                    if (currentHintRound < GAME_CONFIG.HINT_ROUNDS) {
+                        // Sonraki hint round'a geç
+                        room.gameState!.roundNumber++;
+                        room.gameState!.currentTurnIndex = 0;
+                        room.gameState!.hints = {}; // Hint'leri temizle
+                        room.players.forEach(p => p.hint = undefined);
+                        this.startHintTurn(room);
+                    } else {
+                        // Tüm turlar bitti, tartışmaya geç
+                        this.transitionToPhase(room, 'DISCUSSION');
+                    }
+                }
+            );
             return;
         }
 

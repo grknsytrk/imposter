@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/useGameStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { Button } from '../components/ui/button';
 import {
     Ghost,
@@ -11,8 +11,6 @@ import {
     Heart,
     Music,
     Smile,
-    ChevronLeft,
-    ChevronRight,
     Gamepad2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -31,16 +29,16 @@ const AVATARS = [
 export default function Home() {
     const navigate = useNavigate();
     const { connect } = useGameStore();
-    const [name, setName] = useState('');
-    const [avatarIndex, setAvatarIndex] = useState(0);
+    const { profile } = useAuthStore();
 
-    const CurrentAvatarIcon = AVATARS[avatarIndex].icon;
-    const nextAvatar = () => setAvatarIndex((prev) => (prev + 1) % AVATARS.length);
-    const prevAvatar = () => setAvatarIndex((prev) => (prev - 1 + AVATARS.length) % AVATARS.length);
+    // Profile'dan avatar index'i bul
+    const avatarIndex = AVATARS.findIndex(a => a.id === profile?.avatar);
+    const CurrentAvatarIcon = AVATARS[avatarIndex >= 0 ? avatarIndex : 0].icon;
+    const currentLabel = AVATARS[avatarIndex >= 0 ? avatarIndex : 0].label;
 
     const handleConnect = () => {
-        if (name.trim()) {
-            connect(name.trim(), AVATARS[avatarIndex].id);
+        if (profile) {
+            connect(profile.username, profile.avatar);
             navigate('/lobby');
         }
     };
@@ -64,8 +62,6 @@ export default function Home() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* Background pattern is handled by global CSS on body */}
-
             <motion.div
                 variants={containerVariants}
                 initial="hidden"
@@ -97,52 +93,32 @@ export default function Home() {
                     variants={itemVariants}
                     className="premium-card p-8 space-y-8"
                 >
-                    {/* Avatar Selection */}
+                    {/* Profile Display */}
                     <div className="space-y-4 text-center">
-                        <span className="text-subtle font-black tracking-widest text-muted-foreground/50 text-xs">SELECT CHARACTER</span>
-                        <div className="flex items-center justify-center gap-4">
-                            <button
-                                onClick={prevAvatar}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-400 hover:bg-primary hover:text-white border-b-4 border-slate-200 hover:border-primary/50 transition-all active:translate-y-1 active:border-b-0"
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                            </button>
+                        <span className="text-subtle font-black tracking-widest text-muted-foreground/50 text-xs">WELCOME BACK</span>
+                        <div className="flex flex-col items-center gap-4">
                             <motion.div
-                                key={avatarIndex}
-                                initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
-                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                className="w-28 h-28 bg-blue-50 border-4 border-blue-100 rounded-3xl flex items-center justify-center relative shadow-inner"
+                                className="w-28 h-28 bg-muted border-4 border-border rounded-3xl flex items-center justify-center relative shadow-inner"
                             >
                                 <CurrentAvatarIcon className="w-14 h-14 text-primary drop-shadow-lg" />
                             </motion.div>
-                            <button
-                                onClick={nextAvatar}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-400 hover:bg-primary hover:text-white border-b-4 border-slate-200 hover:border-primary/50 transition-all active:translate-y-1 active:border-b-0"
-                            >
-                                <ChevronRight className="w-6 h-6" />
-                            </button>
+                            <div className="space-y-1">
+                                <p className="font-heading text-3xl font-black text-card-foreground uppercase tracking-wide">
+                                    {profile?.username}
+                                </p>
+                                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest">
+                                    {currentLabel}
+                                </p>
+                            </div>
                         </div>
-                        <p className="font-heading text-2xl font-black text-card-foreground uppercase tracking-wide">{AVATARS[avatarIndex].label}</p>
-                    </div>
-
-                    {/* Name Input */}
-                    <div className="space-y-3">
-                        <label className="text-subtle font-black tracking-widest text-muted-foreground/50 ml-1">YOUR NICKNAME</label>
-                        <input
-                            type="text"
-                            placeholder="PLAYER NAME"
-                            className="premium-input w-full text-center font-heading text-xl uppercase tracking-wider text-slate-900 placeholder:text-slate-300"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
-                        />
                     </div>
 
                     <Button
                         onClick={handleConnect}
-                        disabled={!name.trim()}
-                        variant="default" // Default is now the Gold/Primary button
+                        variant="default"
                         size="lg"
                         className="w-full text-lg shadow-xl"
                     >
