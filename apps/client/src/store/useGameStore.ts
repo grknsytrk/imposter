@@ -57,7 +57,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     connect: (name: string, avatar: string) => {
         if (get().socket) return;
 
-        const socket = io('/', { path: '/socket.io' });
+        // Production'da farklı domain, development'ta aynı origin
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
+        const socket = io(socketUrl, { path: '/socket.io' });
 
         socket.on('connect', () => {
             set({ isConnected: true });
