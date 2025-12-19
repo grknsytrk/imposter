@@ -84,6 +84,51 @@
   --ring: 45 100% 50%;
 
   --radius: 1.5rem;
+
+  /* Body gradient colors */
+  --gradient-start: 215 85% 55%;
+  --gradient-end: 215 85% 40%;
+}
+
+.dark {
+  /* MYSTIC VIOLET PALETTE - Imposter Theme */
+  --background: 263 70% 8%;
+  /* Deep violet-black */
+  --foreground: 270 20% 98%;
+  /* Soft lavender white */
+
+  --card: 263 50% 12%;
+  /* Dark violet surface */
+  --card-foreground: 270 20% 95%;
+
+  --popover: 263 50% 14%;
+  --popover-foreground: 270 20% 95%;
+
+  /* Primary stays GOLD for contrast & brand */
+  --primary: 45 100% 50%;
+  --primary-foreground: 20 80% 25%;
+
+  /* Secondary: Electric Purple */
+  --secondary: 280 80% 60%;
+  --secondary-foreground: 270 20% 98%;
+
+  --muted: 263 40% 18%;
+  --muted-foreground: 270 15% 60%;
+
+  /* Accent: Neon Magenta */
+  --accent: 320 100% 60%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 85% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 263 40% 25%;
+  --input: 263 40% 15%;
+  --ring: 280 80% 60%;
+
+  /* Dark mode gradient colors */
+  --gradient-start: 263 60% 18%;
+  --gradient-end: 263 70% 6%;
 }
 
 @layer base {
@@ -95,13 +140,15 @@
   html {
     overflow-x: hidden;
     overflow-y: auto;
+    transition: background-color 0.4s ease;
   }
 
   body {
     @apply bg-background text-foreground min-h-screen font-sans antialiased;
     overflow: visible;
-    background-image: radial-gradient(circle at center, hsl(215 85% 55%) 0%, hsl(215 85% 40%) 100%);
+    background-image: radial-gradient(circle at center, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-end)) 100%);
     cursor: default;
+    transition: background-image 0.5s ease, color 0.3s ease;
   }
 
   #root {

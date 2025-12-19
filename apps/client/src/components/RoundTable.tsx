@@ -59,7 +59,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
         <div className={`relative flex items-center justify-center w-full h-[600px] sm:h-[700px] ${className} overflow-visible`}>
             {/* Central Table Area */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-[180px] h-[180px] sm:w-[280px] sm:h-[280px] rounded-full bg-slate-100/50 border-4 border-slate-200 shadow-xl flex items-center justify-center backdrop-blur-sm z-10 pointer-events-auto">
+                <div className="w-[180px] h-[180px] sm:w-[280px] sm:h-[280px] rounded-full bg-card/50 border-4 border-border shadow-xl flex items-center justify-center backdrop-blur-sm z-10 pointer-events-auto">
                     {centerContent}
                 </div>
             </div>
@@ -114,7 +114,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                                             <div
                                                 className={`
                           w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-md transition-colors duration-300
-                          ${isVotedByMe ? 'bg-rose-100' : 'bg-white border-2 border-slate-100'}
+                          ${isVotedByMe ? 'bg-rose-100' : 'bg-card border-2 border-border'}
                           ${canVote ? 'group-hover:border-rose-400 group-hover:bg-rose-50' : ''}
                           ${isTurn ? 'bg-amber-100 border-amber-300' : ''}
                         `}
@@ -122,7 +122,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                                                 <AvatarIcon
                                                     className={`
                             w-8 h-8 sm:w-10 sm:h-10 transition-colors
-                            ${isVotedByMe ? 'text-rose-500' : 'text-slate-600'}
+                            ${isVotedByMe ? 'text-rose-500' : 'text-muted-foreground'}
                             ${canVote ? 'group-hover:text-rose-500' : ''}
                             ${isTurn ? 'text-amber-600' : ''}
                           `}
@@ -130,7 +130,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
 
                                                 {/* Dead Indicator */}
                                                 {isEliminated && (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 rounded-2xl backdrop-blur-[1px]">
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-background/40 rounded-2xl backdrop-blur-[1px]">
                                                         <Skull className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md" />
                                                     </div>
                                                 )}
@@ -141,7 +141,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                         px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-sm border whitespace-nowrap
                         ${isMe
                                                     ? 'bg-primary text-primary-foreground border-yellow-600'
-                                                    : 'bg-white text-slate-700 border-slate-200'}
+                                                    : 'bg-card text-card-foreground border-border'}
                       `}>
                                                 {p.name}
                                                 {isMe && " (YOU)"}
@@ -168,9 +168,11 @@ export const RoundTable: React.FC<RoundTableProps> = ({
 
                                             {/* Discussion Bubble */}
                                             {hints[p.id] && (phase === 'DISCUSSION' || phase === 'HINT_ROUND' || phase === 'VOTING') && (
-                                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-max max-w-[200px] bg-white p-3 rounded-2xl rounded-bl-none shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border-2 border-slate-200 text-sm text-slate-800 font-bold leading-snug z-[100] flex flex-col items-center text-center whitespace-normal break-words">
-                                                    <span className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 self-start">HINT</span>
-                                                    "{hints[p.id]}"
+                                                <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-max max-w-[200px] bg-popover p-4 rounded-2xl rounded-bl-none shadow-xl border-4 border-border text-popover-foreground z-[100] flex flex-col items-start whitespace-normal break-words">
+                                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-70">Hint</span>
+                                                    <p className="font-heading text-base font-black uppercase leading-tight tracking-wide text-card-foreground">
+                                                        {hints[p.id]}
+                                                    </p>
                                                 </div>
                                             )}
 

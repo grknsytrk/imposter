@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGameStore } from './store/useGameStore';
+import { useAuthStore } from './store/useAuthStore';
 import { Button } from './components/ui/button';
 import { Portal } from './components/Portal';
 import { RoundTable } from './components/RoundTable';
+import { ThemeToggle } from './components/ThemeToggle';
 import { RoleReveal } from './components/RoleReveal';
 import {
   Ghost,
@@ -37,7 +39,8 @@ import {
   Timer,
   Lightbulb,
   RotateCcw,
-  Anchor
+  UserSearch,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES } from '@imposter/shared';
@@ -45,8 +48,8 @@ import { CATEGORIES } from '@imposter/shared';
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { connect, isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState } = useGameStore();
-  const [name, setName] = useState('');
+  const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState } = useGameStore();
+  const { signOut } = useAuthStore();
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [roomIdInput, setRoomIdInput] = useState('');
   const [chatInput, setChatInput] = useState('');
@@ -133,10 +136,6 @@ function App() {
     }
   };
 
-  const handleConnect = () => {
-    if (name.trim()) connect(name.trim(), AVATARS[avatarIndex].id);
-  };
-
   useEffect(() => {
     if (isConnected && !room) {
       const interval = setInterval(refreshRooms, 5000);
@@ -189,78 +188,28 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative font-sans text-foreground">
-      <div className="fixed inset-0 bg-gradient-to-b from-blue-600 to-blue-800 -z-20" />
+      {/* Background gradient driven by CSS variables - changes with theme */}
+      <div
+        className="fixed inset-0 -z-20 transition-all duration-500"
+        style={{
+          background: `radial-gradient(circle at center, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-end)) 100%)`
+        }}
+      />
 
 
 
       <AnimatePresence mode="wait">
+        {/* When App renders, user should already be connected via main.tsx */}
         {!isConnected ? (
+          // Fallback - shouldn't normally reach here since main.tsx handles connection
           <motion.div
-            key="landing"
-            variants={introVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="w-full max-w-md z-10"
+            key="fallback-loading"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center gap-4"
           >
-            {/* LOGIN CARD */}
-            <div className="premium-card p-8">
-              <div className="flex flex-col items-center mb-8">
-                <div className="w-20 h-20 bg-card border-4 border-black/10 rounded-3xl rotate-3 shadow-xl flex items-center justify-center mb-4 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-primary/20" />
-                  <Gamepad2 className="w-10 h-10 text-card-foreground relative z-10" />
-                </div>
-                <h1 className="text-4xl font-heading font-black text-card-foreground tracking-wide uppercase">
-                  Imposter
-                </h1>
-                <div className="px-3 py-1 rounded-full bg-primary/10 mt-2">
-                  <p className="font-heading text-xs text-primary font-black tracking-widest uppercase">
-                    Party Game
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-subtle font-black tracking-widest text-slate-400 ml-1">YOUR IDENTITY</label>
-                  <input
-                    type="text"
-                    placeholder="NICKNAME..."
-                    className="premium-input w-full text-lg uppercase text-slate-800 text-center"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-subtle font-black tracking-widest text-slate-400 ml-1">YOUR CHARACTER</label>
-                  <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-2 border-2 border-slate-200">
-                    <button onClick={prevAvatar} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm text-slate-400 hover:text-primary transition-all">
-                      <ChevronLeft className="w-6 h-6" />
-                    </button>
-                    <div className="flex flex-col items-center gap-1">
-                      <CurrentAvatarIcon className="w-8 h-8 text-primary drop-shadow-sm" />
-                      <span className="font-heading text-sm font-black text-slate-700 uppercase">{AVATARS[avatarIndex].label}</span>
-                    </div>
-                    <button onClick={nextAvatar} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm text-slate-400 hover:text-primary transition-all">
-                      <ChevronRight className="w-6 h-6" />
-                    </button>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleConnect}
-                  disabled={!name.trim()}
-                  variant="default"
-                  size="lg"
-                  className="w-full text-lg shadow-lg mt-2"
-                >
-                  JOIN PARTY
-                </Button>
-              </div>
-            </div>
+            <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+            <p className="text-white font-heading font-black uppercase tracking-widest">Connecting...</p>
           </motion.div>
         ) : !room ? (
           <motion.div
@@ -274,17 +223,17 @@ function App() {
             {/* HEADER */}
             <header className="lg:col-span-12 flex flex-col md:flex-row justify-between items-center pb-6 mb-4 gap-6">
               <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-3xl flex items-center justify-center shadow-lg shadow-blue-900/20 rotate-[-3deg] border-4 border-white/20 backdrop-blur-md relative overflow-hidden group hover:rotate-0 transition-transform duration-500">
+                <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-700 dark:from-violet-600 dark:to-purple-800 rounded-3xl flex items-center justify-center shadow-lg shadow-purple-900/30 rotate-[-3deg] border-4 border-white/20 backdrop-blur-md relative overflow-hidden group hover:rotate-0 transition-transform duration-500">
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                  <Anchor className="w-9 h-9 text-white drop-shadow-md relative z-10" />
+                  <UserSearch className="w-9 h-9 text-white drop-shadow-md relative z-10" />
                 </div>
                 <div>
                   <h2 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-[0_4px_0_rgba(0,0,0,0.2)] stroke-black leading-none">
-                    IMPOSTER <span className="text-cyan-200">HQ</span>
+                    IMPOSTER <span className="text-primary">GAME</span>
                   </h2>
-                  <div className="flex items-center gap-2 bg-blue-900/30 backdrop-blur-md px-4 py-1.5 rounded-full w-fit mt-1 border border-white/10">
+                  <div className="flex items-center gap-2 bg-purple-900/30 dark:bg-violet-900/40 backdrop-blur-md px-4 py-1.5 rounded-full w-fit mt-1 border border-white/10">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
-                    <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest pl-1">Ocean Terminal Online</span>
+                    <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest pl-1">Find the Imposter</span>
                   </div>
                 </div>
               </div>
@@ -298,7 +247,7 @@ function App() {
                   <span className="text-sm font-black text-card-foreground tracking-wide uppercase">{player?.name}</span>
                   <div className="flex items-center gap-2" onClick={(e) => { e.stopPropagation(); setIsStatusDropdownOpen(!isStatusDropdownOpen); }}>
                     <div className={`w-2 h-2 rounded-full ${STATUSES[statusIndex].color}`} />
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                       {customStatus || STATUSES[statusIndex].label}
                     </span>
                   </div>
@@ -313,7 +262,7 @@ function App() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-white border-4 border-slate-200 rounded-2xl z-50 p-2 shadow-xl"
+                        className="absolute top-full right-0 mt-3 w-56 bg-popover border-4 border-border rounded-2xl z-50 p-2 shadow-xl"
                       >
                         {STATUSES.map((status, idx) => (
                           <button
@@ -323,14 +272,14 @@ function App() {
                               setStatusIndex(idx);
                               setIsStatusDropdownOpen(false);
                             }}
-                            className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 flex items-center justify-between transition-colors group"
+                            className="w-full text-left px-4 py-3 rounded-xl hover:bg-muted flex items-center justify-between transition-colors group"
                           >
-                            <span className="text-xs font-bold uppercase text-slate-600 group-hover:text-slate-900">{status.label}</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground group-hover:text-foreground">{status.label}</span>
                             <div className={`w-2 h-2 rounded-full ${status.color}`} />
                           </button>
                         ))}
                         <input
-                          className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl mt-2 px-4 py-2 text-xs font-bold text-slate-700 placeholder:text-slate-400 outline-none focus:border-primary"
+                          className="w-full bg-muted/50 border-2 border-border rounded-xl mt-2 px-4 py-2 text-xs font-bold text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
                           placeholder="CUSTOM STATUS..."
                           value={customStatus}
                           onClick={(e) => e.stopPropagation()}
@@ -341,14 +290,26 @@ function App() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Theme Toggle & Logout */}
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <button
+                  onClick={signOut}
+                  className="p-3 rounded-xl bg-muted hover:bg-destructive text-muted-foreground hover:text-white transition-all border-2 border-border hover:border-destructive"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
             </header>
 
             {/* LEFT COLUMN - ACTIONS */}
             <div className="lg:col-span-4 space-y-6">
               <div className="premium-card p-6 flex flex-col gap-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <Swords className="w-6 h-6 text-slate-800" />
-                  <span className="font-heading font-black text-xl text-slate-800 tracking-wide uppercase">Matchmaking</span>
+                  <Swords className="w-6 h-6 text-card-foreground" />
+                  <span className="font-heading font-black text-xl text-card-foreground tracking-wide uppercase">Matchmaking</span>
                 </div>
 
                 <button
@@ -361,19 +322,19 @@ function App() {
                 </button>
 
                 <div className="relative flex py-2 items-center">
-                  <div className="flex-grow border-t-2 border-slate-200"></div>
-                  <span className="flex-shrink-0 mx-4 text-xs font-black text-slate-300 uppercase tracking-widest">OR JOIN</span>
-                  <div className="flex-grow border-t-2 border-slate-200"></div>
+                  <div className="flex-grow border-t-2 border-border"></div>
+                  <span className="flex-shrink-0 mx-4 text-xs font-black text-muted-foreground/50 uppercase tracking-widest">OR JOIN</span>
+                  <div className="flex-grow border-t-2 border-border"></div>
                 </div>
 
-                <div className="bg-slate-100 p-4 rounded-2xl border-2 border-slate-200 relative group focus-within:border-primary focus-within:bg-white transition-all">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 group-focus-within:text-primary transition-colors">Enter Room Code</label>
+                <div className="bg-muted/50 p-4 rounded-2xl border-2 border-border relative group focus-within:border-primary focus-within:bg-card transition-all">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-2 group-focus-within:text-primary transition-colors">Enter Room Code</label>
                   <div className="flex gap-2">
                     <input
                       value={roomIdInput}
                       onChange={e => setRoomIdInput(e.target.value.toUpperCase())}
                       placeholder="CODE..."
-                      className="flex-1 bg-transparent font-heading font-black text-2xl text-slate-800 placeholder:text-slate-300 outline-none uppercase"
+                      className="flex-1 bg-transparent font-heading font-black text-2xl text-foreground placeholder:text-muted-foreground/50 outline-none uppercase"
                     />
                     <button
                       disabled={!roomIdInput}
@@ -395,14 +356,14 @@ function App() {
             <div className="lg:col-span-8">
               <div className="premium-card flex flex-col">
                 {/* Tool Bar */}
-                <div className="border-b-2 border-slate-100 p-6 flex justify-between items-center">
+                <div className="border-b-2 border-border p-6 flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                       <Users className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                      <span className="font-heading text-lg font-black text-slate-800 uppercase">Public Arenas</span>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{rooms.length} ACTIVE GAMES</div>
+                      <span className="font-heading text-lg font-black text-card-foreground uppercase">Public Arenas</span>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rooms.length} ACTIVE GAMES</div>
                     </div>
                   </div>
                   <button
@@ -423,9 +384,9 @@ function App() {
                 </div>
 
                 {/* List */}
-                <div className="p-6 space-y-3 bg-slate-50/50">
+                <div className="p-6 space-y-3 bg-muted/20">
                   {rooms.length === 0 ? (
-                    <div className="h-[400px] flex flex-col items-center justify-center text-slate-300 space-y-6">
+                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground/40 space-y-6">
                       <CircleDashed className="w-16 h-16 animate-spin-slow opacity-50" />
                       <span className="text-sm font-black tracking-widest uppercase">No Rooms Found</span>
                     </div>
@@ -440,16 +401,16 @@ function App() {
                           if (r.hasPassword) setJoinPasswordModal({ roomId: r.id, roomName: r.name });
                           else joinRoom(r.id);
                         }}
-                        className="group bg-white border-b-4 border-slate-200 hover:border-primary p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between relative"
+                        className="group bg-card border-b-4 border-muted hover:border-primary p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between relative"
                       >
                         <div className="flex items-center gap-4">
                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${r.hasPassword ? 'bg-amber-100' : 'bg-blue-50'}`}>
                             {r.hasPassword ? <Lock className="w-6 h-6 text-amber-500" /> : <Gamepad2 className="w-6 h-6 text-primary" />}
                           </div>
                           <div>
-                            <h3 className="text-lg font-heading font-black text-slate-800 group-hover:text-primary transition-colors bg-clip-text">{r.name || r.id}</h3>
+                            <h3 className="text-lg font-heading font-black text-card-foreground group-hover:text-primary transition-colors bg-clip-text">{r.name || r.id}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">{r.id}</span>
+                              <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider">{r.id}</span>
                               {r.hasPassword && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-600 text-[10px] font-bold uppercase tracking-wider">PRIVATE</span>}
                             </div>
                           </div>
@@ -457,10 +418,10 @@ function App() {
 
                         <div className="flex items-center gap-6">
                           <div className="text-right">
-                            <div className="text-lg font-black text-slate-700 tabular-nums">{r.playerCount} / {r.maxPlayers}</div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Players</div>
+                            <div className="text-lg font-black text-foreground tabular-nums">{r.playerCount} / {r.maxPlayers}</div>
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Players</div>
                           </div>
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                             <ChevronRight className="w-5 h-5" />
                           </div>
                         </div>
@@ -483,7 +444,7 @@ function App() {
             {/* ROOM INTERFACE */}
             <div className="premium-card flex flex-col shadow-2xl mt-8">
               {/* Yeni kompakt header */}
-              <div className="p-6 border-b-2 border-slate-100 bg-white rounded-t-3xl">
+              <div className="p-6 border-b-2 border-border bg-card rounded-t-3xl">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   {/* Left: Arena Info */}
                   <div className="flex items-center gap-4">
@@ -491,18 +452,18 @@ function App() {
                       <Gamepad2 className="w-8 h-8 text-yellow-900" />
                     </div>
                     <div>
-                      <h1 className="text-3xl font-heading font-black text-slate-900 tracking-wide uppercase leading-none drop-shadow-sm">
+                      <h1 className="text-3xl font-heading font-black text-card-foreground tracking-wide uppercase leading-none drop-shadow-sm">
                         ARENA {room.id}
                       </h1>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">CODE: {room.id}</span>
+                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">CODE: {room.id}</span>
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(room.id);
                             setCopiedRoomId(true);
                             setTimeout(() => setCopiedRoomId(false), 2000);
                           }}
-                          className="text-slate-300 hover:text-primary transition-colors"
+                          className="text-muted-foreground hover:text-primary transition-colors"
                         >
                           {copiedRoomId ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         </button>
@@ -522,7 +483,7 @@ function App() {
                       </span>
                     </div>
 
-                    <div className="px-4 py-1.5 rounded-full border-2 border-slate-200 bg-slate-50 text-slate-500 flex items-center gap-2">
+                    <div className="px-4 py-1.5 rounded-full border-2 border-border bg-muted text-muted-foreground flex items-center gap-2">
                       <Users className="w-3 h-3" />
                       <span className="text-[10px] font-black uppercase tracking-widest tabular-nums">
                         {room.players.length}/{room.maxPlayers}
@@ -537,25 +498,27 @@ function App() {
                       <X className="w-3 h-3 mr-2" />
                       LEAVE
                     </Button>
+
+                    <ThemeToggle />
                   </div>
                 </div>
 
                 {/* Info Bar (Category/Word) - Only show if playing */}
                 {gameState && gameState.phase !== 'LOBBY' && (
-                  <div className="mt-6 flex flex-col md:flex-row items-stretch border-2 border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50">
-                    <div className="flex-1 flex items-center gap-4 p-4 border-b-2 md:border-b-0 md:border-r-2 border-slate-100 bg-white">
+                  <div className="mt-6 flex flex-col md:flex-row items-stretch border-2 border-border rounded-2xl overflow-hidden bg-muted/20">
+                    <div className="flex-1 flex items-center gap-4 p-4 border-b-2 md:border-b-0 md:border-r-2 border-border bg-card">
                       <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
                         <Lightbulb className="w-5 h-5 text-amber-500" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</span>
-                        <span className="font-heading font-black text-lg text-slate-800 uppercase leading-none">{gameState.category}</span>
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Category</span>
+                        <span className="font-heading font-black text-lg text-card-foreground uppercase leading-none">{gameState.category}</span>
                       </div>
                     </div>
 
-                    <div className="flex-1 flex items-center justify-between p-4 bg-white relative overflow-hidden">
+                    <div className="flex-1 flex items-center justify-between p-4 bg-card relative overflow-hidden">
                       <div className="flex flex-col relative z-10">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word</span>
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Word</span>
                         <span className={`font-heading font-black text-lg uppercase leading-none ${gameState.isImposter ? 'text-rose-500' : 'text-emerald-500'}`}>
                           {gameState.isImposter ? 'UNKNOWN' : gameState.word}
                         </span>
@@ -574,11 +537,11 @@ function App() {
               {!gameState || gameState.phase === 'LOBBY' ? (
                 <>
                   {/* LOBBY CONTENT */}
-                  <div className="flex-1 p-12 bg-slate-50/30">
+                  <div className="flex-1 p-12 bg-muted/10">
                     <div className="flex items-center gap-4 mb-8">
-                      <span className="font-black text-slate-400 uppercase tracking-widest text-sm">PLAYERS</span>
-                      <div className="flex-1 h-[2px] bg-slate-200" />
-                      <span className="font-mono text-sm font-bold text-slate-400">{room.players.length} / {room.maxPlayers}</span>
+                      <span className="font-black text-muted-foreground uppercase tracking-widest text-sm">PLAYERS</span>
+                      <div className="flex-1 h-[2px] bg-border" />
+                      <span className="font-mono text-sm font-bold text-muted-foreground">{room.players.length} / {room.maxPlayers}</span>
                     </div>
 
                     {/* PLAYER GRID */}
@@ -599,19 +562,21 @@ function App() {
                                 >
                                   START
                                 </Button>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">
-                                  {room.players.length < 3 ? "Need 3+ Players" : "Ready!"}
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">
+                                  {room.players.length < 3
+                                    ? `Need ${3 - room.players.length} more player${3 - room.players.length > 1 ? 's' : ''}`
+                                    : "Ready!"}
                                 </p>
                               </>
                             ) : (
                               <>
-                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center animate-spin-slow">
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center animate-spin-slow">
                                   <CircleDashed className="w-6 h-6 text-primary" />
                                 </div>
-                                <span className="text-xs font-black text-slate-400 uppercase tracking-wide leading-tight">Waiting for host...</span>
+                                <span className="text-xs font-black text-muted-foreground uppercase tracking-wide leading-tight">Waiting for host...</span>
                               </>
                             )}
-                            <div className="mt-1 text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-bold border border-slate-200">
+                            <div className="mt-1 text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground font-bold border border-border">
                               {room.players.length} / {room.maxPlayers} Ready
                             </div>
                           </div>
@@ -629,7 +594,7 @@ function App() {
                 />
               ) : gameState.phase === 'HINT_ROUND' ? (
                 /* ==================== HINT ROUND ==================== */
-                <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[400px]">
+                <div className="flex-1 flex flex-col items-center justify-center bg-card min-h-[400px]">
                   <RoundTable
                     players={room.players}
                     currentPlayerId={player?.id}
@@ -639,11 +604,11 @@ function App() {
                     avatars={AVATARS}
                     centerContent={
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <Clock className="w-8 h-8 text-slate-300 animate-pulse" />
-                        <span className="text-xl font-heading font-black text-slate-50 tabular-nums">
+                        <Clock className="w-8 h-8 text-muted-foreground animate-pulse" />
+                        <span className="text-xl font-heading font-black text-foreground tabular-nums">
                           {gameState.phaseTimeLeft}s
                         </span>
-                        <span className="text-[10px] font-black uppercase text-slate-400">
+                        <span className="text-[10px] font-black uppercase text-muted-foreground">
                           {gameState.turnOrder[gameState.currentTurnIndex] === player?.id ? "YOUR TURN" : "WAITING..."}
                         </span>
                       </div>
@@ -656,14 +621,14 @@ function App() {
                       <motion.div
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        className="flex gap-2 shadow-2xl rounded-2xl bg-white p-2 border-2 border-slate-100"
+                        className="flex gap-2 shadow-2xl rounded-2xl bg-card p-2 border-2 border-border"
                       >
                         <input
                           value={hintInput}
                           onChange={e => setHintInput(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && hintInput.trim() && submitHint(hintInput)}
                           placeholder="Type your hint..."
-                          className="flex-1 bg-transparent px-4 py-3 font-bold text-slate-700 outline-none uppercase placeholder:text-slate-300"
+                          className="flex-1 bg-transparent px-4 py-3 font-bold text-card-foreground outline-none uppercase placeholder:text-muted-foreground"
                           autoFocus
                         />
                         <Button
@@ -683,7 +648,7 @@ function App() {
                   )}
                 </div>
               ) : gameState.phase === 'DISCUSSION' ? (
-                <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[400px]">
+                <div className="flex-1 flex flex-col items-center justify-center bg-card min-h-[400px]">
                   <RoundTable
                     players={room.players}
                     currentPlayerId={player?.id}
@@ -702,13 +667,13 @@ function App() {
                       </div>
                     }
                   />
-                  <div className="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-6 py-3 rounded-full border-2 border-slate-100 shadow-xl text-xs font-bold text-slate-500 uppercase tracking-widest z-50">
+                  <div className="fixed bottom-32 left-1/2 -translate-x-1/2 bg-popover/90 backdrop-blur px-6 py-3 rounded-full border-2 border-border shadow-xl text-xs font-bold text-muted-foreground uppercase tracking-widest z-50">
                     Use chat to discuss
                   </div>
                 </div>
               ) : gameState.phase === 'VOTING' ? (
                 /* ==================== VOTE ==================== */
-                <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[400px]">
+                <div className="flex-1 flex flex-col items-center justify-center bg-card min-h-[400px]">
                   <RoundTable
                     players={room.players}
                     currentPlayerId={player?.id}
@@ -760,11 +725,11 @@ function App() {
                     }
                   />
                   <div className="fixed bottom-32 left-1/2 -translate-x-1/2 text-center pointer-events-none">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest drop-shadow-sm">Tap a player to select</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest drop-shadow-sm">Tap a player to select</p>
                   </div>
                 </div>
               ) : gameState.phase === 'VOTE_RESULT' ? (
-                <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[400px]">
+                <div className="flex-1 flex flex-col items-center justify-center bg-card min-h-[400px]">
                   <RoundTable
                     players={room.players}
                     currentPlayerId={player?.id}
@@ -792,30 +757,30 @@ function App() {
                           </>
                         ) : (
                           <>
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                               <span className="text-lg">🤷</span>
                             </div>
-                            <span className="text-[10px] font-black uppercase text-slate-400">NO ONE ELIMINATED</span>
+                            <span className="text-[10px] font-black uppercase text-muted-foreground">NO ONE ELIMINATED</span>
                           </>
                         )}
-                        <span className="text-xs font-bold text-slate-400 tabular-nums bg-slate-100 px-2 py-0.5 rounded-full mt-1">
+                        <span className="text-xs font-bold text-muted-foreground tabular-nums bg-muted px-2 py-0.5 rounded-full mt-1">
                           {gameState.phaseTimeLeft}s
                         </span>
                       </div>
                     }
                   />
                   <div className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 pointer-events-none">
-                    <div className="bg-white/90 backdrop-blur p-4 rounded-2xl border-2 border-slate-100 shadow-xl text-center">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">VOTE BREAKDOWN</h4>
+                    <div className="bg-popover/90 backdrop-blur p-4 rounded-2xl border-2 border-border shadow-xl text-center">
+                      <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">VOTE BREAKDOWN</h4>
                       <div className="flex flex-wrap justify-center gap-2">
-                        <span className="text-xs font-bold text-slate-500">Check the table for details</span>
+                        <span className="text-xs font-bold text-muted-foreground">Check the table for details</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : gameState.phase === 'GAME_OVER' ? (
                 /* ==================== OYUN BİTTİ EKRANI ==================== */
-                <div className="flex-1 p-12 flex flex-col items-center justify-center bg-gradient-to-b from-amber-50/50 to-white">
+                <div className="flex-1 p-12 flex flex-col items-center justify-center bg-card">
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -840,13 +805,13 @@ function App() {
                         }`}>
                         {gameState.winner === 'CITIZENS' ? 'VATANDAŞLAR' : 'IMPOSTER'}
                       </h2>
-                      <p className="text-2xl font-heading font-black text-slate-400 mt-2">KAZANDI!</p>
+                      <p className="text-2xl font-heading font-black text-muted-foreground mt-2">WON!</p>
                     </div>
 
                     {/* Imposter kimdi */}
                     {gameState.imposterId && (
-                      <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 max-w-sm mx-auto">
-                        <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Imposter</span>
+                      <div className="bg-card rounded-2xl p-6 border-2 border-border max-w-sm mx-auto">
+                        <span className="text-sm font-black text-muted-foreground uppercase tracking-widest">Imposter</span>
                         <div className="flex items-center justify-center gap-3 mt-3">
                           {(() => {
                             const imposter = room.players.find(p => p.id === gameState.imposterId);
@@ -863,9 +828,9 @@ function App() {
                             );
                           })()}
                         </div>
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                          <span className="text-xs text-slate-400 font-bold">Kelime: </span>
-                          <span className="font-heading font-black text-slate-700">{gameState.category} - {gameState.word || '?'}</span>
+                        <div className="mt-4 pt-4 border-t border-border">
+                          <span className="text-xs text-muted-foreground font-bold">Word: </span>
+                          <span className="font-heading font-black text-card-foreground">{gameState.category} - {gameState.word || '?'}</span>
                         </div>
                       </div>
                     )}
@@ -882,7 +847,7 @@ function App() {
                     )}
 
                     {player?.id !== room.ownerId && (
-                      <p className="text-slate-400 font-bold">Waiting for host to start a new game...</p>
+                      <p className="text-muted-foreground font-bold">Waiting for host to start a new game...</p>
                     )}
                   </motion.div>
                 </div>
@@ -914,20 +879,20 @@ function App() {
                 {/* Close Button */}
                 <button
                   onClick={() => { setIsCreateRoomOpen(false); setSelectedCategory(''); }}
-                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-500 transition-all"
+                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-2 h-8 bg-primary rounded-full" />
-                  <h3 className="text-2xl font-heading font-black text-slate-800 tracking-wider uppercase stroke-black">Create Room</h3>
+                  <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase stroke-black">Create Room</h3>
                 </div>
 
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-black tracking-widest text-slate-400 uppercase ml-1">Room Name</label>
+                      <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">Room Name</label>
                     </div>
                     <input
                       value={newRoomName}
@@ -940,7 +905,7 @@ function App() {
 
                   {/* Kategori Seçimi - Dropdown */}
                   <div className="space-y-3">
-                    <label className="text-xs font-black tracking-widest text-slate-400 uppercase ml-1">Category</label>
+                    <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">Category</label>
                     <div className="relative">
                       <select
                         value={selectedCategory}
@@ -952,15 +917,15 @@ function App() {
                           <option key={cat.name} value={cat.name}>{cat.name}</option>
                         ))}
                       </select>
-                      <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 rotate-90 pointer-events-none" />
+                      <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground rotate-90 pointer-events-none" />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl">
-                    <span className="text-sm font-black text-slate-600 uppercase tracking-wide">Private Room</span>
+                  <div className="flex items-center justify-between p-4 bg-muted/50 border-2 border-border rounded-2xl">
+                    <span className="text-sm font-black text-card-foreground uppercase tracking-wide">Private Room</span>
                     <button
                       onClick={() => setIsPrivateRoom(!isPrivateRoom)}
-                      className={`h-8 w-14 border-4 transition-all flex items-center px-1 rounded-full ${isPrivateRoom ? 'border-primary bg-primary' : 'border-slate-300 bg-slate-200'}`}
+                      className={`h-8 w-14 border-4 transition-all flex items-center px-1 rounded-full ${isPrivateRoom ? 'border-primary bg-primary' : 'border-border bg-muted'}`}
                     >
                       <motion.div
                         animate={{ x: isPrivateRoom ? 24 : 0 }}
@@ -979,7 +944,7 @@ function App() {
                         className="overflow-hidden"
                       >
                         <div className="pt-2 space-y-3">
-                          <label className="text-xs font-black tracking-widest text-slate-400 uppercase ml-1">Password</label>
+                          <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">Password</label>
                           <input
                             type="password"
                             value={newRoomPassword}
@@ -1024,19 +989,19 @@ function App() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
-                className="premium-card bg-white p-8 w-full max-w-sm shadow-2xl relative"
+                className="premium-card bg-card p-8 w-full max-w-sm shadow-2xl relative"
               >
                 {/* Close Button */}
                 <button
                   onClick={() => setIsProfileOpen(false)}
-                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-500 transition-all"
+                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
                 <div className="flex items-center justify-center gap-3 mb-8">
                   <div className="w-2 h-8 bg-primary rounded-full" />
-                  <h3 className="text-2xl font-heading font-black text-slate-800 tracking-wider uppercase">Profile</h3>
+                  <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase">Profile</h3>
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
@@ -1045,20 +1010,20 @@ function App() {
                   </div>
 
                   <div className="flex items-center gap-4 w-full">
-                    <button onClick={prevAvatar} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 hover:bg-primary border-b-4 border-slate-200 hover:border-yellow-600 text-slate-500 hover:text-white transition-all active:border-b-0 active:translate-y-1">
+                    <button onClick={prevAvatar} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-muted hover:bg-primary border-b-4 border-border hover:border-yellow-600 text-muted-foreground hover:text-white transition-all active:border-b-0 active:translate-y-1">
                       <ChevronLeft className="w-6 h-6" />
                     </button>
-                    <div className="flex-1 text-center bg-slate-50 py-3 rounded-xl border-2 border-slate-200">
-                      <span className="font-heading font-black text-xl uppercase text-slate-700">{AVATARS[avatarIndex].label}</span>
+                    <div className="flex-1 text-center bg-muted py-3 rounded-xl border-2 border-border">
+                      <span className="font-heading font-black text-xl uppercase text-white">{AVATARS[avatarIndex].label}</span>
                     </div>
-                    <button onClick={nextAvatar} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 hover:bg-primary border-b-4 border-slate-200 hover:border-yellow-600 text-slate-500 hover:text-white transition-all active:border-b-0 active:translate-y-1">
+                    <button onClick={nextAvatar} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-muted hover:bg-primary border-b-4 border-border hover:border-yellow-600 text-muted-foreground hover:text-white transition-all active:border-b-0 active:translate-y-1">
                       <ChevronRight className="w-6 h-6" />
                     </button>
                   </div>
 
-                  <div className="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-200">
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-2">Username</label>
-                    <div className="text-2xl font-heading font-black text-slate-800 tracking-wide uppercase">
+                  <div className="w-full bg-muted p-4 rounded-2xl border-2 border-border">
+                    <label className="text-[10px] font-black tracking-widest text-white/60 uppercase block mb-2">Username</label>
+                    <div className="text-2xl font-heading font-black text-white tracking-wide uppercase">
                       {player?.name}
                     </div>
                   </div>
@@ -1129,11 +1094,11 @@ function App() {
               initial={{ opacity: 0, y: 30, x: '-50%' }}
               animate={{ opacity: 1, y: 0, x: '-50%' }}
               exit={{ opacity: 0, y: 20, x: '-50%', transition: { duration: 0.2 } }}
-              className={`fixed bottom-12 left-1/2 z-[100] px-8 py-5 border-4 rounded-2xl shadow-2xl flex items-center gap-6 min-w-[320px] bg-white ${toast.type === 'error'
+              className={`fixed bottom-12 left-1/2 z-[100] px-8 py-5 border-4 rounded-2xl shadow-2xl flex items-center gap-6 min-w-[320px] bg-card ${toast.type === 'error'
                 ? 'border-rose-500 text-rose-500'
                 : toast.type === 'success'
                   ? 'border-emerald-500 text-emerald-600'
-                  : 'border-slate-300 text-slate-600'
+                  : 'border-border text-muted-foreground'
                 }`}
             >
               <div className="flex-shrink-0">
@@ -1149,7 +1114,7 @@ function App() {
                 <span className="text-[10px] font-black opacity-40 block mb-1 uppercase tracking-widest">{toast.type}_LOG</span>
                 <span className="text-sm font-bold uppercase tracking-wide">{toast.message}</span>
               </div>
-              <button onClick={clearToast} className="p-2 hover:bg-slate-100 rounded-full transition-colors opacity-50 hover:opacity-100">
+              <button onClick={clearToast} className="p-2 hover:bg-muted rounded-full transition-colors opacity-50 hover:opacity-100">
                 <X className="w-4 h-4" />
               </button>
             </motion.div>
@@ -1166,45 +1131,45 @@ function App() {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 20, opacity: 0, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="fixed right-4 bottom-24 w-[350px] h-[450px] bg-white rounded-2xl shadow-2xl z-[9999] flex flex-col overflow-hidden border-4 border-slate-200"
+              className="fixed right-4 bottom-24 w-[350px] h-[450px] bg-card rounded-2xl shadow-2xl z-[9999] flex flex-col overflow-hidden border-4 border-border"
             >
-              <div className="p-4 border-b-2 border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="p-4 border-b-2 border-primary/30 flex justify-between items-center bg-primary">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
-                  <span className="font-heading font-black text-slate-800 uppercase tracking-wide">Party Chat</span>
+                  <span className="font-heading font-black text-primary-foreground uppercase tracking-wide">Party Chat</span>
                 </div>
-                <button onClick={() => setIsChatOpen(false)} className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-rose-500 transition-colors">
+                <button onClick={() => setIsChatOpen(false)} className="p-2 hover:bg-primary-foreground/20 rounded-xl text-primary-foreground hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-card">
                 {messages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center opacity-30 space-y-2">
-                    <MessageSquare className="w-12 h-12 text-slate-400" />
-                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">No messages yet</span>
+                    <MessageSquare className="w-12 h-12 text-muted-foreground" />
+                    <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">No messages yet</span>
                   </div>
                 )}
                 {messages.map((m) => (
                   <div key={m.id} className={`flex flex-col ${m.playerId === player?.id ? 'items-end' : 'items-start'}`}>
                     <div className={`max-w-[85%] px-4 py-3 rounded-2xl border-2 shadow-sm ${m.playerId === player?.id
                       ? 'bg-primary text-primary-foreground border-primary rounded-br-none'
-                      : 'bg-slate-100 text-slate-800 border-slate-200 rounded-bl-none'}`}>
+                      : 'bg-muted text-card-foreground border-border rounded-bl-none'}`}>
                       <p className="text-sm font-bold leading-snug break-words">{m.content}</p>
                     </div>
-                    <span className="text-[9px] font-black text-slate-300 mt-1 uppercase tracking-wider mx-1">{m.playerName}</span>
+                    <span className="text-[9px] font-black text-card-foreground/70 mt-1 uppercase tracking-wider mx-1">{m.playerName}</span>
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="p-4 border-t-2 border-slate-100 bg-slate-50">
+              <div className="p-4 border-t-2 border-border bg-muted">
                 <div className="flex gap-2">
                   <input
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1 premium-input h-12 text-sm bg-white"
+                    className="flex-1 premium-input h-12 text-sm bg-card"
                     placeholder="TYPE MESSAGE..."
                   />
                   <Button
@@ -1228,9 +1193,9 @@ function App() {
           room && !isChatOpen && (
             <button
               onClick={() => setIsChatOpen(true)}
-              className="fixed right-6 bottom-6 w-16 h-16 bg-white border-4 border-slate-200 rounded-2xl shadow-xl flex items-center justify-center transition-all z-[9998] group hover:scale-110 active:scale-95 hover:border-primary"
+              className="fixed right-6 bottom-6 w-16 h-16 bg-card border-4 border-border rounded-2xl shadow-xl flex items-center justify-center transition-all z-[9998] group hover:scale-110 active:scale-95 hover:border-primary"
             >
-              <MessageSquare className="w-8 h-8 text-slate-400 group-hover:text-primary transition-colors" />
+              <MessageSquare className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
               {unreadCount > 0 && (
                 <motion.div
                   initial={{ scale: 0 }}
