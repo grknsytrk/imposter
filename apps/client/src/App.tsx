@@ -48,7 +48,7 @@ import { CATEGORIES } from '@imposter/shared';
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState } = useGameStore();
+  const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState, disconnect } = useGameStore();
   const { signOut } = useAuthStore();
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [roomIdInput, setRoomIdInput] = useState('');
@@ -295,7 +295,10 @@ function App() {
               <div className="flex items-center gap-2">
                 <ThemeToggle />
                 <button
-                  onClick={signOut}
+                  onClick={() => {
+                    disconnect();
+                    signOut();
+                  }}
                   className="p-3 rounded-xl bg-muted hover:bg-destructive text-muted-foreground hover:text-white transition-all border-2 border-border hover:border-destructive"
                   title="Logout"
                 >

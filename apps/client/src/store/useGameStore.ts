@@ -31,6 +31,7 @@ interface GameState {
     gameState: ClientGameState | null;
 
     connect: (name: string, avatar: string) => void;
+    disconnect: () => void;
     createRoom: (name: string, password?: string, category?: string) => void;
     joinRoom: (roomId: string, password?: string) => void;
     startGame: () => void;
@@ -101,6 +102,22 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
 
         set({ socket });
+    },
+
+    disconnect: () => {
+        const socket = get().socket;
+        if (socket) {
+            socket.disconnect();
+        }
+        set({
+            socket: null,
+            isConnected: false,
+            player: null,
+            room: null,
+            rooms: [],
+            messages: [],
+            gameState: null
+        });
     },
 
     createRoom: (name: string, password?: string, category?: string) => {
