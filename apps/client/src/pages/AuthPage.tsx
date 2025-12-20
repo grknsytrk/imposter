@@ -107,7 +107,7 @@ export function AuthPage() {
             >
                 {/* Logo */}
                 <div className="text-center mb-8 h-20 flex flex-col justify-end">
-                    <h1 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-lg">
+                    <h1 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-md">
                         AMONG <span className="text-primary">LIES</span>
                     </h1>
                     <p className="text-white/70 mt-2 font-bold uppercase tracking-widest text-sm">
@@ -343,7 +343,7 @@ export function AuthPage() {
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <Gamepad2 className="w-5 h-5 text-primary" />
-                                        <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Welcome to Among Lies!</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">Welcome to Among Lies!</h3>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                                         By accessing and playing Among Lies, you agree to be bound by these Terms of Service.
@@ -354,7 +354,7 @@ export function AuthPage() {
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <MessageSquare className="w-5 h-5 text-emerald-500" />
-                                        <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Fair Play & Conduct</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">Fair Play & Conduct</h3>
                                     </div>
                                     <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-2 list-disc list-inside">
                                         <li>Be respectful to other players at all times</li>
@@ -367,7 +367,7 @@ export function AuthPage() {
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <Shield className="w-5 h-5 text-blue-500" />
-                                        <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Your Account</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">Your Account</h3>
                                     </div>
                                     <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-2 list-disc list-inside">
                                         <li>You are responsible for maintaining account security</li>
@@ -379,7 +379,7 @@ export function AuthPage() {
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <AlertTriangle className="w-5 h-5 text-amber-500" />
-                                        <h3 className="font-bold text-lg text-card-foreground" style={{ textShadow: 'none' }}>Disclaimer</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">Disclaimer</h3>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                                         Among Lies is provided "as is" without warranties. We reserve the right to modify
@@ -389,7 +389,7 @@ export function AuthPage() {
 
                                 <div className="pt-4 border-t border-border">
                                     <p className="text-xs text-muted-foreground text-center">
-                                        Last updated: December 2024
+                                        Last updated: December 2025
                                     </p>
                                 </div>
                             </div>

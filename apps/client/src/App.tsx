@@ -40,7 +40,8 @@ import {
   Lightbulb,
   RotateCcw,
   UserSearch,
-  LogOut
+  LogOut,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORIES } from '@imposter/shared';
@@ -88,6 +89,8 @@ function App() {
   const [newRoomPassword, setNewRoomPassword] = useState('');
   const [isPrivateRoom, setIsPrivateRoom] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>(''); // Boş = rastgele
+  // Rules Modal State
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
   // Status state
   const [statusIndex, setStatusIndex] = useState(0);
   const [customStatus, setCustomStatus] = useState('');
@@ -228,7 +231,7 @@ function App() {
                   <UserSearch className="w-9 h-9 text-white drop-shadow-md relative z-10" />
                 </div>
                 <div>
-                  <h2 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-[0_4px_0_rgba(0,0,0,0.2)] stroke-black leading-none">
+                  <h2 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-md stroke-black leading-none">
                     AMONG <span className="text-primary">LIES</span>
                   </h2>
                   <div className="flex items-center gap-2 bg-purple-900/30 dark:bg-violet-900/40 backdrop-blur-md px-4 py-1.5 rounded-full w-fit mt-1 border border-white/10">
@@ -291,8 +294,15 @@ function App() {
                 </AnimatePresence>
               </div>
 
-              {/* Theme Toggle & Logout */}
+              {/* Theme Toggle, Rules & Logout */}
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsRulesOpen(true)}
+                  className="p-3 rounded-xl bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary transition-all border-2 border-border hover:border-primary"
+                  title="How to Play"
+                >
+                  <BookOpen className="w-5 h-5" />
+                </button>
                 <ThemeToggle />
                 <button
                   onClick={() => {
@@ -1189,6 +1199,114 @@ function App() {
           )}
         </AnimatePresence>
       </Portal >
+
+      {/* RULES MODAL */}
+      <AnimatePresence>
+        {isRulesOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setIsRulesOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="premium-card bg-card p-6 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-heading font-black text-card-foreground uppercase">How to Play</h2>
+                </div>
+                <button
+                  onClick={() => setIsRulesOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-card-foreground">
+                <section>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Gamepad2 className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold text-lg text-card-foreground">The Game</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Among Lies is a social deduction game where one player is secretly the <span className="text-rose-500 font-bold">Imposter</span> while
+                    others are <span className="text-emerald-500 font-bold">Citizens</span>. The Citizens know a secret word, but the Imposter doesn't!
+                  </p>
+                </section>
+
+                <section>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="w-5 h-5 text-amber-500" />
+                    <h3 className="font-bold text-lg text-card-foreground">Hint Round</h3>
+                  </div>
+                  <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                    <li>Each player gives a <span className="font-bold">one-word hint</span> related to the secret word</li>
+                    <li>Citizens: Give hints that prove you know the word, but don't make it too obvious!</li>
+                    <li>Imposter: Bluff! Try to give a believable hint without knowing the word</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="w-5 h-5 text-purple-500" />
+                    <h3 className="font-bold text-lg text-card-foreground">Discussion</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    After hints, discuss who you think the Imposter is. Analyze the hints - whose hint seems suspicious or vague?
+                  </p>
+                </section>
+
+                <section>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Vote className="w-5 h-5 text-rose-500" />
+                    <h3 className="font-bold text-lg text-card-foreground">Voting</h3>
+                  </div>
+                  <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                    <li>Vote for who you think is the Imposter</li>
+                    <li>The player with the most votes is eliminated</li>
+                    <li>If the Imposter is caught, <span className="text-emerald-500 font-bold">Citizens win!</span></li>
+                    <li>If a Citizen is eliminated, <span className="text-rose-500 font-bold">Imposter wins!</span></li>
+                  </ul>
+                </section>
+
+                <section>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    <h3 className="font-bold text-lg text-card-foreground">Tips</h3>
+                  </div>
+                  <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                    <li>Pay attention to who hesitates or gives generic hints</li>
+                    <li>As an Imposter, listen carefully to others' hints for clues</li>
+                    <li>Don't give hints that are too obvious - it might help the Imposter!</li>
+                  </ul>
+                </section>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <Button
+                  onClick={() => setIsRulesOpen(false)}
+                  className="w-full h-12 font-heading font-black uppercase tracking-wider"
+                >
+                  Got It!
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* CHAT TOGGLE - Portal ile body'ye taşındı */}
       <Portal>
