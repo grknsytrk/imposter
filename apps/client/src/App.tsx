@@ -2,11 +2,14 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGameStore } from './store/useGameStore';
 import { useAuthStore } from './store/useAuthStore';
+import { useGameSound } from './hooks/useGameSound';
 import { Button } from './components/ui/button';
 import { Portal } from './components/Portal';
 import { RoundTable } from './components/RoundTable';
 import { ThemeToggle } from './components/ThemeToggle';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { RoleReveal } from './components/RoleReveal';
+import { AmbientFireworks } from './components/AmbientFireworks';
 import {
   Ghost,
   Cat,
@@ -36,14 +39,15 @@ import {
   Vote,
   Trophy,
   Skull,
-  Timer,
   Lightbulb,
   RotateCcw,
+  SearchX,
   UserSearch,
   LogOut,
   BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { CATEGORIES } from '@imposter/shared';
 
 function App() {
@@ -51,6 +55,9 @@ function App() {
   const location = useLocation();
   const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState, disconnect } = useGameStore();
   const { signOut } = useAuthStore();
+  const { t } = useTranslation();
+  const { t: tGame } = useTranslation('game');
+  const { playTone } = useGameSound();
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [roomIdInput, setRoomIdInput] = useState('');
   const [chatInput, setChatInput] = useState('');
@@ -89,6 +96,7 @@ function App() {
   const [newRoomPassword, setNewRoomPassword] = useState('');
   const [isPrivateRoom, setIsPrivateRoom] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>(''); // Boş = rastgele
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   // Rules Modal State
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   // Status state
@@ -110,6 +118,7 @@ function App() {
   });
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const categoryButtonRef = useRef<HTMLDivElement>(null);
 
   const [lastReadIndex, setLastReadIndex] = useState(0);
 
@@ -129,6 +138,17 @@ function App() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Close category dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isCategoryOpen && categoryButtonRef.current && !categoryButtonRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCategoryOpen]);
 
 
 
@@ -179,14 +199,25 @@ function App() {
     }
   }, [isConnected, room, navigate, location.pathname, pendingRoomId, joinRoom, rooms]);
 
-  const introVariants: any = {
-    hidden: { opacity: 0, scale: 0.98 },
+  const introVariants = {
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      scale: 1,
-      transition: { duration: 0.8, ease: "easeOut" }
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
     },
     exit: { opacity: 0, filter: "blur(10px)", transition: { duration: 0.5 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring" as const, stiffness: 300, damping: 24 }
+    }
   };
 
   return (
@@ -198,6 +229,9 @@ function App() {
           background: `radial-gradient(circle at center, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-end)) 100%)`
         }}
       />
+
+      {/* Dynamic Ambient Fireworks */}
+      <AmbientFireworks />
 
 
 
@@ -211,8 +245,29 @@ function App() {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center gap-4"
           >
-            <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-            <p className="text-white font-heading font-black uppercase tracking-widest">Connecting...</p>
+            <motion.div
+              animate={{
+                y: [0, -10, 0],
+                // scale: [1, 1.1, 1],
+                filter: ["brightness(1)", "brightness(1.2)", "brightness(1)"]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-2xl border-4 border-white/20 relative"
+            >
+              <Ghost className="w-12 h-12 text-white drop-shadow-md" />
+              <div className="absolute -bottom-2 w-16 h-4 bg-black/30 blur-md rounded-full" />
+            </motion.div>
+            <motion.p
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="text-white font-heading font-black uppercase tracking-[0.2em] text-lg text-shadow-sm"
+            >
+              {t('app.connecting')}...
+            </motion.p>
           </motion.div>
         ) : !room ? (
           <motion.div
@@ -224,8 +279,9 @@ function App() {
             className="w-full max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-12 gap-8"
           >
             {/* HEADER */}
-            <header className="lg:col-span-12 flex flex-col md:flex-row justify-between items-center pb-6 mb-4 gap-6">
-              <div className="flex items-center gap-5">
+            <motion.header variants={itemVariants} className="lg:col-span-12 flex flex-col md:flex-row justify-between items-center pb-6 mb-4 gap-6 relative z-[100]">
+              {/* LEFT: BRANDING */}
+              <div className="flex items-center gap-5 self-start md:self-auto">
                 <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-700 dark:from-violet-600 dark:to-purple-800 rounded-3xl flex items-center justify-center shadow-lg shadow-purple-900/30 rotate-[-3deg] border-4 border-white/20 backdrop-blur-md relative overflow-hidden group hover:rotate-0 transition-transform duration-500">
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                   <UserSearch className="w-9 h-9 text-white drop-shadow-md relative z-10" />
@@ -236,117 +292,153 @@ function App() {
                   </h2>
                   <div className="flex items-center gap-2 bg-purple-900/30 dark:bg-violet-900/40 backdrop-blur-md px-4 py-1.5 rounded-full w-fit mt-1 border border-white/10">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
-                    <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest pl-1">Find the Liar</span>
+                    <span className="text-white/90 text-[10px] font-bold uppercase tracking-widest pl-1">{t('app.tagline')}</span>
                   </div>
                 </div>
               </div>
 
-              {/* PROFILE CARD */}
-              <div className="premium-card !p-2 flex items-center gap-4 cursor-pointer hover:scale-[1.02] transition-transform min-w-[240px]" onClick={() => setIsProfileOpen(true)}>
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center border-2 border-blue-200">
-                  <CurrentAvatarIcon className="w-8 h-8 text-primary" />
-                </div>
-                <div className="flex flex-col items-start pr-4">
-                  <span className="text-sm font-black text-card-foreground tracking-wide uppercase">{player?.name}</span>
-                  <div className="flex items-center gap-2" onClick={(e) => { e.stopPropagation(); setIsStatusDropdownOpen(!isStatusDropdownOpen); }}>
-                    <div className={`w-2 h-2 rounded-full ${STATUSES[statusIndex].color}`} />
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                      {customStatus || STATUSES[statusIndex].label}
-                    </span>
+              {/* RIGHT: PROFILE & CONTROLS */}
+              <div className="flex items-center gap-4 self-end md:self-auto">
+
+                {/* PROFILE CAPSULE */}
+                <div className="relative group z-50">
+                  <div
+                    className="flex items-center gap-3 pl-2 pr-6 py-2 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full cursor-pointer hover:bg-black/30 transition-all select-none"
+                    onClick={() => { playTone('click'); setIsProfileOpen(true); }}
+                    onMouseEnter={() => playTone('hover')}
+                  >
+                    {/* Avatar Ring */}
+                    <div className="relative">
+                      <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center border-2 border-indigo-400/30 overflow-hidden">
+                        <CurrentAvatarIcon className="w-6 h-6 text-indigo-200" />
+                      </div>
+                      {/* Status Indicator */}
+                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-black rounded-full ${STATUSES[statusIndex].color} shadow-sm`} />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black text-white tracking-wide uppercase leading-none mb-0.5 max-w-[100px] truncate">{player?.name}</span>
+                      <div className="flex items-center gap-1.5" onClick={(e) => { e.stopPropagation(); setIsStatusDropdownOpen(!isStatusDropdownOpen); }}>
+                        <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider hover:text-white transition-colors">
+                          {customStatus || STATUSES[statusIndex].label}
+                        </span>
+                        <ChevronRight className={`w-3 h-3 text-white/30 transition-transform ${isStatusDropdownOpen ? 'rotate-90' : ''}`} />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Status Dropdown (Floating) */}
+                  <AnimatePresence>
+                    {isStatusDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsStatusDropdownOpen(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute top-full right-0 mt-3 w-56 bg-card border-2 border-border rounded-2xl z-50 p-2 shadow-2xl origin-top-right"
+                        >
+                          {STATUSES.map((status, idx) => (
+                            <button
+                              key={status.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStatusIndex(idx);
+                                setIsStatusDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-4 py-3 rounded-xl hover:bg-muted flex items-center justify-between transition-colors group"
+                            >
+                              <span className="text-xs font-bold uppercase text-muted-foreground group-hover:text-primary transition-colors">{status.label}</span>
+                              <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                            </button>
+                          ))}
+                          <input
+                            className="w-full bg-muted/50 border-2 border-border rounded-xl mt-2 px-4 py-2 text-xs font-bold text-card-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
+                            placeholder="CUSTOM STATUS..."
+                            value={customStatus}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={e => setCustomStatus(e.target.value)}
+                          />
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                {/* Status Dropdown */}
-                <AnimatePresence>
-                  {isStatusDropdownOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setIsStatusDropdownOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-popover border-4 border-border rounded-2xl z-50 p-2 shadow-xl"
-                      >
-                        {STATUSES.map((status, idx) => (
-                          <button
-                            key={status.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setStatusIndex(idx);
-                              setIsStatusDropdownOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-3 rounded-xl hover:bg-muted flex items-center justify-between transition-colors group"
-                          >
-                            <span className="text-xs font-bold uppercase text-muted-foreground group-hover:text-foreground">{status.label}</span>
-                            <div className={`w-2 h-2 rounded-full ${status.color}`} />
-                          </button>
-                        ))}
-                        <input
-                          className="w-full bg-muted/50 border-2 border-border rounded-xl mt-2 px-4 py-2 text-xs font-bold text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
-                          placeholder="CUSTOM STATUS..."
-                          value={customStatus}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={e => setCustomStatus(e.target.value)}
-                        />
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
+                {/* Unified Control Bar */}
+                <div className="flex items-center p-1.5 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+                  {/* Rules */}
+                  <button
+                    onClick={() => setIsRulesOpen(true)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                    title="How to Play"
+                  >
+                    <BookOpen className="w-5 h-5" />
+                  </button>
 
-              {/* Theme Toggle, Rules & Logout */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsRulesOpen(true)}
-                  className="p-3 rounded-xl bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary transition-all border-2 border-border hover:border-primary"
-                  title="How to Play"
-                >
-                  <BookOpen className="w-5 h-5" />
-                </button>
-                <ThemeToggle />
-                <button
-                  onClick={() => {
-                    disconnect();
-                    signOut();
-                  }}
-                  className="p-3 rounded-xl bg-muted hover:bg-destructive text-muted-foreground hover:text-white transition-all border-2 border-border hover:border-destructive"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
+                  {/* Vertical Divider */}
+                  <div className="w-px h-4 bg-white/10 mx-1" />
+
+                  {/* Settings Group */}
+                  <div className="flex items-center gap-1">
+                    <LanguageSwitcher />
+                    <ThemeToggle />
+                  </div>
+
+                  {/* Vertical Divider */}
+                  <div className="w-px h-4 bg-white/10 mx-1" />
+
+                  {/* Logout - Danger Action */}
+                  <button
+                    onClick={() => {
+                      disconnect();
+                      signOut();
+                    }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                    title="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-            </header>
+            </motion.header>
 
             {/* LEFT COLUMN - ACTIONS */}
-            <div className="lg:col-span-4 space-y-6">
+            <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
               <div className="premium-card p-6 flex flex-col gap-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Swords className="w-6 h-6 text-card-foreground" />
-                  <span className="font-heading font-black text-xl text-card-foreground tracking-wide uppercase">Matchmaking</span>
+                  <span className="font-heading font-black text-xl text-card-foreground tracking-wide uppercase">{t('matchmaking.title')}</span>
                 </div>
 
-                <button
-                  onClick={() => setIsCreateRoomOpen(true)}
-                  className="group relative w-full h-32 bg-gradient-to-b from-yellow-400 to-yellow-500 rounded-3xl border-b-8 border-yellow-700 active:border-b-0 active:translate-y-2 transition-all shadow-xl flex flex-col items-center justify-center overflow-hidden"
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+
+                  onMouseEnter={() => playTone('hover')}
+                  onClick={() => { playTone('click'); setIsCreateRoomOpen(true); }}
+                  className="group relative w-full h-32 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-3xl border-b-8 border-yellow-700 active:border-b-0 transition-all shadow-xl flex flex-col items-center justify-center overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[200%] transition-transform duration-1000 ease-in-out" />
-                  <span className="font-heading font-black text-3xl text-yellow-900 tracking-wider uppercase drop-shadow-sm">Host Game</span>
-                  <span className="text-[10px] font-black text-yellow-900/60 uppercase tracking-widest mt-1">Create New Room</span>
-                </button>
+                  <span className="font-heading font-black text-3xl text-yellow-900 tracking-wider uppercase drop-shadow-sm flex items-center gap-2">
+                    {t('matchmaking.hostGame')}
+                  </span>
+                  <span className="text-[10px] font-black text-yellow-900/60 uppercase tracking-widest mt-1">{t('matchmaking.createNewRoom')}</span>
+                </motion.button>
 
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t-2 border-border"></div>
-                  <span className="flex-shrink-0 mx-4 text-xs font-black text-muted-foreground/50 uppercase tracking-widest">OR JOIN</span>
+                  <span className="flex-shrink-0 mx-4 text-xs font-black text-muted-foreground/50 uppercase tracking-widest">{t('matchmaking.orJoin')}</span>
                   <div className="flex-grow border-t-2 border-border"></div>
                 </div>
 
                 <div className="bg-muted/50 p-4 rounded-2xl border-2 border-border relative group focus-within:border-primary focus-within:bg-card transition-all">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-2 group-focus-within:text-primary transition-colors">Enter Room Code</label>
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-2 group-focus-within:text-primary transition-colors">{t('matchmaking.enterRoomCode')}</label>
                   <div className="flex gap-2">
                     <input
                       value={roomIdInput}
                       onChange={e => setRoomIdInput(e.target.value.toUpperCase())}
-                      placeholder="CODE..."
+                      placeholder={t('matchmaking.codePlaceholder')}
                       className="flex-1 bg-transparent font-heading font-black text-2xl text-foreground placeholder:text-muted-foreground/50 outline-none uppercase"
                     />
                     <button
@@ -363,10 +455,10 @@ function App() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* RIGHT COLUMN - ROOM LIST */}
-            <div className="lg:col-span-8">
+            <motion.div variants={itemVariants} className="lg:col-span-8">
               <div className="premium-card flex flex-col">
                 {/* Tool Bar */}
                 <div className="border-b-2 border-border p-6 flex justify-between items-center">
@@ -375,20 +467,22 @@ function App() {
                       <Users className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                      <span className="font-heading text-lg font-black text-card-foreground uppercase">Public Arenas</span>
-                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rooms.length} ACTIVE GAMES</div>
+                      <span className="font-heading text-lg font-black text-card-foreground uppercase">{t('arenas.title')}</span>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rooms.length} {t('arenas.activeGames')}</div>
                     </div>
                   </div>
                   <button
                     onClick={() => {
-                      setRefreshRotation(p => p + 360);
+                      playTone('click');
+                      setRefreshRotation(p => p - 360);
                       refreshRooms();
                     }}
+                    onMouseEnter={() => playTone('hover')}
                     className="group relative p-3 overflow-hidden rounded-xl transition-all hover:scale-105 active:scale-95"
                   >
-                    <div className="absolute inset-0 bg-cyan-100/50 backdrop-blur-sm border-2 border-cyan-200 rounded-xl group-hover:bg-cyan-200/50 transition-colors" />
+                    <div className="absolute inset-0 bg-muted/40 backdrop-blur-sm border-2 border-border rounded-xl group-hover:bg-primary/20 group-hover:border-primary/30 transition-all" />
                     <div
-                      className="relative z-10 text-cyan-700 transition-transform duration-1000 ease-out drop-shadow-sm"
+                      className="relative z-10 text-muted-foreground group-hover:text-primary transition-transform duration-1000 ease-out drop-shadow-sm"
                       style={{ transform: `rotate(${refreshRotation}deg)` }}
                     >
                       <RotateCcw className="w-5 h-5" />
@@ -399,21 +493,39 @@ function App() {
                 {/* List */}
                 <div className="p-6 space-y-3 bg-muted/20">
                   {rooms.length === 0 ? (
-                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground/40 space-y-6">
-                      <CircleDashed className="w-16 h-16 animate-spin-slow opacity-50" />
-                      <span className="text-sm font-black tracking-widest uppercase">No Rooms Found</span>
+                    <div className="h-[400px] flex flex-col items-center justify-center text-muted-foreground/30 space-y-6">
+                      <div className="relative">
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.1, 1],
+                            opacity: [0.3, 0.6, 0.3]
+                          }}
+                          transition={{
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                          className="absolute inset-0 bg-primary/20 blur-2xl rounded-full"
+                        />
+                        <SearchX className="w-20 h-20 relative z-10 stroke-[1.5px]" />
+                      </div>
+                      <span className="text-base font-black tracking-[0.2em] uppercase opacity-60 text-center">{t('arenas.noRooms')}</span>
                     </div>
                   ) : (
-                    rooms.map((r, i) => (
+                    rooms.map((r) => (
                       <motion.div
+                        layout
                         key={r.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05, duration: 0.4 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ type: "spring" as const, stiffness: 500, damping: 30 }}
                         onClick={() => {
+                          playTone('click');
                           if (r.hasPassword) setJoinPasswordModal({ roomId: r.id, roomName: r.name });
                           else joinRoom(r.id);
                         }}
+                        onMouseEnter={() => playTone('hover')}
                         className="group bg-card border-b-4 border-muted hover:border-primary p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between relative"
                       >
                         <div className="flex items-center gap-4">
@@ -424,7 +536,7 @@ function App() {
                             <h3 className="text-lg font-heading font-black text-card-foreground group-hover:text-primary transition-colors bg-clip-text">{r.name || r.id}</h3>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider">{r.id}</span>
-                              {r.hasPassword && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-600 text-[10px] font-bold uppercase tracking-wider">PRIVATE</span>}
+                              {r.hasPassword && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-600 text-[10px] font-bold uppercase tracking-wider">{t('lobby.private')}</span>}
                             </div>
                           </div>
                         </div>
@@ -432,7 +544,7 @@ function App() {
                         <div className="flex items-center gap-6">
                           <div className="text-right">
                             <div className="text-lg font-black text-foreground tabular-nums">{r.playerCount} / {r.maxPlayers}</div>
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Players</div>
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('arenas.players')}</div>
                           </div>
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                             <ChevronRight className="w-5 h-5" />
@@ -443,7 +555,7 @@ function App() {
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
           </motion.div>
         ) : (
@@ -466,10 +578,10 @@ function App() {
                     </div>
                     <div>
                       <h1 className="text-3xl font-heading font-black text-card-foreground tracking-wide uppercase leading-none drop-shadow-sm">
-                        ARENA {room.id}
+                        {tGame('room.arena')} {room.id}
                       </h1>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">CODE: {room.id}</span>
+                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">{tGame('room.code')}: {room.id}</span>
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(room.id);
@@ -486,32 +598,38 @@ function App() {
 
                   {/* Right: Actions */}
                   <div className="flex items-center gap-3">
-                    <div className={`px-4 py-1.5 rounded-full border-2 flex items-center gap-2 ${room.status === 'PLAYING'
-                      ? 'bg-rose-50 border-rose-200 text-rose-500'
-                      : 'bg-emerald-50 border-emerald-200 text-emerald-500'
-                      }`}>
-                      <div className={`w-2 h-2 rounded-full bg-current ${room.status !== 'PLAYING' ? 'animate-pulse' : ''}`} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">
-                        {room.status === 'PLAYING' ? 'PLAYING' : 'OPEN'}
+                    {/* Category Badge */}
+                    <div className="badge-category badge-glow-amber">
+                      <Lightbulb className="w-4 h-4" />
+                      <span>
+                        {room.selectedCategory ? t(`categories.${room.selectedCategory}`) : (gameState?.category ? t(`categories.${gameState.category}`) : t('lobby.random'))}
                       </span>
                     </div>
 
-                    <div className="px-4 py-1.5 rounded-full border-2 border-border bg-muted text-muted-foreground flex items-center gap-2">
-                      <Users className="w-3 h-3" />
-                      <span className="text-[10px] font-black uppercase tracking-widest tabular-nums">
-                        {room.players.length}/{room.maxPlayers}
+                    <div className={`${room.status === 'PLAYING' ? 'badge-danger badge-glow-rose' : 'badge-success badge-glow-emerald'}`}>
+                      <div className={`w-2 h-2 rounded-full bg-current opacity-80 ${room.status !== 'PLAYING' ? 'animate-pulse' : ''}`} />
+                      <span>
+                        {room.status === 'PLAYING' ? tGame('room.playing') : tGame('room.open')}
+                      </span>
+                    </div>
+
+                    <div className="badge-neutral">
+                      <Users className="w-4 h-4 opacity-70" />
+                      <span className="tabular-nums">
+                        {room.players.length}<span className="opacity-50 mx-0.5">/</span>{room.maxPlayers}
                       </span>
                     </div>
 
                     <Button
                       onClick={leaveRoom}
                       variant="destructive"
-                      className="px-6 rounded-full font-black uppercase tracking-widest text-[10px] h-9 shadow-md hover:shadow-lg active:translate-y-0.5 active:shadow-none transition-all border-b-4 border-red-700 hover:bg-red-500"
+                      className="w-9 h-9 p-0 rounded-full shadow-md hover:shadow-lg active:translate-y-0.5 active:shadow-none transition-all border-b-4 border-red-700 hover:bg-red-500"
+                      title="Leave Room"
                     >
-                      <X className="w-3 h-3 mr-2" />
-                      LEAVE
+                      <X className="w-4 h-4" />
                     </Button>
 
+                    <LanguageSwitcher />
                     <ThemeToggle />
                   </div>
                 </div>
@@ -529,17 +647,12 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="flex-1 flex items-center justify-between p-4 bg-card relative overflow-hidden">
-                      <div className="flex flex-col relative z-10">
+                    <div className="flex-1 flex items-center justify-center p-4 bg-card relative overflow-hidden">
+                      <div className="flex flex-col relative z-10 text-center">
                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Word</span>
                         <span className={`font-heading font-black text-lg uppercase leading-none ${gameState.isImposter ? 'text-rose-500' : 'text-emerald-500'}`}>
                           {gameState.isImposter ? 'UNKNOWN' : gameState.word}
                         </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-blue-50 border-2 border-blue-100 text-blue-500 relative z-10">
-                        <Timer className="w-4 h-4" />
-                        <span className="font-black text-sm tabular-nums">{gameState.turnTimeLeft || gameState.phaseTimeLeft}s</span>
                       </div>
                     </div>
                   </div>
@@ -552,7 +665,7 @@ function App() {
                   {/* LOBBY CONTENT */}
                   <div className="flex-1 p-12 bg-muted/10">
                     <div className="flex items-center gap-4 mb-8">
-                      <span className="font-black text-muted-foreground uppercase tracking-widest text-sm">PLAYERS</span>
+                      <span className="font-black text-muted-foreground uppercase tracking-widest text-sm">{tGame('room.players')}</span>
                       <div className="flex-1 h-[2px] bg-border" />
                       <span className="font-mono text-sm font-bold text-muted-foreground">{room.players.length} / {room.maxPlayers}</span>
                     </div>
@@ -573,12 +686,12 @@ function App() {
                                   disabled={room.players.length < 3}
                                   className="w-full h-14 premium-button premium-button-primary text-lg shadow-xl"
                                 >
-                                  START
+                                  {t('buttons.start')}
                                 </Button>
                                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">
                                   {room.players.length < 3
-                                    ? `Need ${3 - room.players.length} more player${3 - room.players.length > 1 ? 's' : ''}`
-                                    : "Ready!"}
+                                    ? t('game:messages.needMorePlayers', { count: 3 - room.players.length })
+                                    : tGame('messages.ready')}
                                 </p>
                               </>
                             ) : (
@@ -586,11 +699,11 @@ function App() {
                                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center animate-spin-slow">
                                   <CircleDashed className="w-6 h-6 text-primary" />
                                 </div>
-                                <span className="text-xs font-black text-muted-foreground uppercase tracking-wide leading-tight">Waiting for host...</span>
+                                <span className="text-xs font-black text-muted-foreground uppercase tracking-wide leading-tight">{tGame('messages.waitingForHost')}</span>
                               </>
                             )}
                             <div className="mt-1 text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground font-bold border border-border">
-                              {room.players.length} / {room.maxPlayers} Ready
+                              {room.players.length} / {room.maxPlayers} {tGame('room.ready')}
                             </div>
                           </div>
                         }
@@ -619,7 +732,7 @@ function App() {
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Clock className="w-8 h-8 text-muted-foreground animate-pulse" />
                         <span className="text-xl font-heading font-black text-foreground tabular-nums">
-                          {gameState.phaseTimeLeft}s
+                          {gameState.turnTimeLeft || gameState.phaseTimeLeft}s
                         </span>
                         <span className="text-[10px] font-black uppercase text-muted-foreground">
                           {gameState.turnOrder[gameState.currentTurnIndex] === player?.id ? "YOUR TURN" : "WAITING..."}
@@ -899,13 +1012,13 @@ function App() {
 
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-2 h-8 bg-primary rounded-full" />
-                  <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase stroke-black">Create Room</h3>
+                  <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase stroke-black">{t('lobby.createRoom')}</h3>
                 </div>
 
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">Room Name</label>
+                      <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">{t('lobby.roomName')}</label>
                     </div>
                     <input
                       value={newRoomName}
@@ -916,28 +1029,25 @@ function App() {
                     />
                   </div>
 
-                  {/* Kategori Seçimi - Dropdown */}
+                  {/* Kategori Seçimi - Custom Dropdown with Portal */}
                   <div className="space-y-3">
-                    <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">Category</label>
-                    <div className="relative">
-                      <select
-                        value={selectedCategory}
-                        onChange={e => setSelectedCategory(e.target.value)}
-                        className="premium-input w-full text-lg appearance-none cursor-pointer pr-12 uppercase font-bold"
+                    <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">{t('lobby.category')}</label>
+                    <div className="relative" ref={categoryButtonRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className="premium-input w-full text-lg text-left cursor-pointer pr-12 uppercase font-bold flex items-center justify-between"
                       >
-                        <option value="">Random</option>
-                        {CATEGORIES.map((cat) => (
-                          <option key={cat.name} value={cat.name}>{cat.name}</option>
-                        ))}
-                      </select>
-                      <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground rotate-90 pointer-events-none" />
+                        <span>{selectedCategory ? t(`categories.${selectedCategory}`) : t('lobby.random')}</span>
+                        <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isCategoryOpen ? '-rotate-90' : 'rotate-90'}`} />
+                      </button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-muted/50 border-2 border-border rounded-2xl">
-                    <span className="text-sm font-black text-card-foreground uppercase tracking-wide">Private Room</span>
+                    <span className="text-sm font-black text-card-foreground uppercase tracking-wide">{t('lobby.privateRoom')}</span>
                     <button
-                      onClick={() => setIsPrivateRoom(!isPrivateRoom)}
+                      onClick={() => { playTone('click'); setIsPrivateRoom(!isPrivateRoom); }}
                       className={`h-8 w-14 border-4 transition-all flex items-center px-1 rounded-full ${isPrivateRoom ? 'border-primary bg-primary' : 'border-border bg-muted'}`}
                     >
                       <motion.div
@@ -954,10 +1064,10 @@ function App() {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
+                        className="overflow-visible"
                       >
-                        <div className="pt-2 space-y-3">
-                          <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">Password</label>
+                        <div className="pt-4 space-y-3">
+                          <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">{t('lobby.password')}</label>
                           <input
                             type="password"
                             value={newRoomPassword}
@@ -971,13 +1081,13 @@ function App() {
                   </AnimatePresence>
 
                   <div className="flex gap-4 pt-4">
-                    <Button onClick={() => { setIsCreateRoomOpen(false); setSelectedCategory(''); }} variant="secondary" className="flex-1 h-16 shadow-lg">CANCEL</Button>
+                    <Button onClick={() => { setIsCreateRoomOpen(false); setSelectedCategory(''); }} variant="secondary" className="flex-1 h-16 shadow-lg">{t('buttons.cancel')}</Button>
                     <Button onClick={() => {
                       const finalName = newRoomName.trim() || `ROOM #${Math.floor(Math.random() * 9000) + 1000}`;
                       createRoom(finalName, isPrivateRoom ? newRoomPassword : undefined, selectedCategory || undefined);
                       setIsCreateRoomOpen(false);
                       setNewRoomName(''); setIsPrivateRoom(false); setNewRoomPassword(''); setSelectedCategory('');
-                    }} variant="default" className="flex-1 h-16 shadow-lg">CREATE</Button>
+                    }} variant="default" className="flex-1 h-16 shadow-lg">{t('buttons.create')}</Button>
                   </div>
                 </div>
               </motion.div>
@@ -1014,7 +1124,7 @@ function App() {
 
                 <div className="flex items-center justify-center gap-3 mb-8">
                   <div className="w-2 h-8 bg-primary rounded-full" />
-                  <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase">Profile</h3>
+                  <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase">{t('profile.title')}</h3>
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
@@ -1035,7 +1145,7 @@ function App() {
                   </div>
 
                   <div className="w-full bg-muted p-4 rounded-2xl border-2 border-border">
-                    <label className="text-[10px] font-black tracking-widest text-white/60 uppercase block mb-2">Username</label>
+                    <label className="text-[10px] font-black tracking-widest text-white/60 uppercase block mb-2">{t('profile.username')}</label>
                     <div className="text-2xl font-heading font-black text-white tracking-wide uppercase">
                       {player?.name}
                     </div>
@@ -1046,7 +1156,7 @@ function App() {
                     variant="default"
                     className="w-full h-14 shadow-lg"
                   >
-                    DONE
+                    {t('buttons.done')}
                   </Button>
                 </div>
               </motion.div>
@@ -1070,7 +1180,7 @@ function App() {
                   <div className="w-20 h-20 border-4 border-rose-100 rounded-3xl flex items-center justify-center bg-rose-50">
                     <Lock className="w-10 h-10 text-rose-500" />
                   </div>
-                  <h3 className="text-2xl font-heading font-black text-rose-500 tracking-wider uppercase">Room Locked</h3>
+                  <h3 className="text-2xl font-heading font-black text-rose-500 tracking-wider uppercase">{tGame('room.locked')}</h3>
                 </div>
 
                 <div className="space-y-6">
@@ -1079,18 +1189,18 @@ function App() {
                     value={modalPasswordInput}
                     onChange={e => setModalPasswordInput(e.target.value)}
                     className="premium-input w-full text-center tracking-widest text-rose-500 border-rose-200 focus:border-rose-500"
-                    placeholder="PASSWORD"
+                    placeholder={t('lobby.password')}
                     autoFocus
                     onKeyDown={e => e.key === 'Enter' && modalPasswordInput && (joinRoom(joinPasswordModal.roomId, modalPasswordInput), setJoinPasswordModal(null), setModalPasswordInput(''))}
                   />
 
                   <div className="flex gap-4">
-                    <Button onClick={() => { setJoinPasswordModal(null); setModalPasswordInput(''); }} variant="secondary" className="flex-1 h-14 font-black">CANCEL</Button>
+                    <Button onClick={() => { setJoinPasswordModal(null); setModalPasswordInput(''); }} variant="secondary" className="flex-1 h-14 font-black">{t('buttons.cancel')}</Button>
                     <Button onClick={() => {
                       joinRoom(joinPasswordModal.roomId, modalPasswordInput);
                       setJoinPasswordModal(null);
                       setModalPasswordInput('');
-                    }} variant="destructive" className="flex-1 h-14 font-black shadow-lg">UNLOCK</Button>
+                    }} variant="destructive" className="flex-1 h-14 font-black shadow-lg">{t('buttons.unlock')}</Button>
                   </div>
                 </div>
               </div>
@@ -1149,7 +1259,7 @@ function App() {
               <div className="p-4 border-b-2 border-primary/30 flex justify-between items-center bg-primary">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
-                  <span className="font-heading font-black text-primary-foreground uppercase tracking-wide">Party Chat</span>
+                  <span className="font-heading font-black text-primary-foreground uppercase tracking-wide">{t('chat.title')}</span>
                 </div>
                 <button onClick={() => setIsChatOpen(false)} className="p-2 hover:bg-primary-foreground/20 rounded-xl text-primary-foreground hover:text-white transition-colors">
                   <X className="w-5 h-5" />
@@ -1160,7 +1270,7 @@ function App() {
                 {messages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center opacity-30 space-y-2">
                     <MessageSquare className="w-12 h-12 text-muted-foreground" />
-                    <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">No messages yet</span>
+                    <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">{t('chat.noMessages')}</span>
                   </div>
                 )}
                 {messages.map((m) => (
@@ -1182,8 +1292,8 @@ function App() {
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1 premium-input h-12 text-sm bg-card"
-                    placeholder="TYPE MESSAGE..."
+                    className="flex-1 bg-white border-4 border-slate-300 rounded-xl px-4 py-2 font-black text-slate-700 uppercase tracking-wide placeholder:text-slate-400 focus:border-primary focus:outline-none focus:scale-[1.02] transition-all shadow-inner"
+                    placeholder={t('chat.placeholder')}
                   />
                   <Button
                     onClick={handleSendMessage}
@@ -1223,7 +1333,7 @@ function App() {
                   <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
                     <BookOpen className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="text-xl font-heading font-black text-card-foreground uppercase">How to Play</h2>
+                  <h2 className="text-xl font-heading font-black text-card-foreground uppercase">{tGame('rules.title')}</h2>
                 </div>
                 <button
                   onClick={() => setIsRulesOpen(false)}
@@ -1238,58 +1348,80 @@ function App() {
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <Gamepad2 className="w-5 h-5 text-primary" />
-                    <h3 className="font-bold text-lg text-card-foreground">The Game</h3>
+                    <h3 className="font-bold text-lg text-card-foreground">{tGame('rules.theGame')}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Among Lies is a social deduction game where one player is secretly the <span className="text-rose-500 font-bold">Imposter</span> while
-                    others are <span className="text-emerald-500 font-bold">Citizens</span>. The Citizens know a secret word, but the Imposter doesn't!
+                    {tGame('rules.gameDesc').split('<imposter>').map((part, i) => {
+                      if (i === 0) return part;
+                      const [imposterText, rest] = part.split('</imposter>');
+                      return (
+                        <span key={i}>
+                          <span className="text-rose-500 font-bold">{imposterText}</span>
+                          {rest?.split('<citizen>').map((citizenPart, j) => {
+                            if (j === 0) return citizenPart;
+                            const [citizenText, remaining] = citizenPart.split('</citizen>');
+                            return (
+                              <span key={j}>
+                                <span className="text-emerald-500 font-bold">{citizenText}</span>
+                                {remaining}
+                              </span>
+                            );
+                          })}
+                        </span>
+                      );
+                    })}
                   </p>
                 </section>
 
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <Lightbulb className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-lg text-card-foreground">Hint Round</h3>
+                    <h3 className="font-bold text-lg text-card-foreground">{tGame('rules.hintRound')}</h3>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
-                    <li>Each player gives a <span className="font-bold">one-word hint</span> related to the secret word</li>
-                    <li>Citizens: Give hints that prove you know the word, but don't make it too obvious!</li>
-                    <li>Imposter: Bluff! Try to give a believable hint without knowing the word</li>
+                    {(tGame('rules.hintRules', { returnObjects: true }) as string[]).map((rule, i) => (
+                      <li key={i} dangerouslySetInnerHTML={{ __html: rule.replace('<bold>', '<span class="font-bold">').replace('</bold>', '</span>') }} />
+                    ))}
                   </ul>
                 </section>
 
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <MessageSquare className="w-5 h-5 text-purple-500" />
-                    <h3 className="font-bold text-lg text-card-foreground">Discussion</h3>
+                    <h3 className="font-bold text-lg text-card-foreground">{tGame('rules.discussion')}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    After hints, discuss who you think the Imposter is. Analyze the hints - whose hint seems suspicious or vague?
+                    {tGame('rules.discussionDesc')}
                   </p>
                 </section>
 
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <Vote className="w-5 h-5 text-rose-500" />
-                    <h3 className="font-bold text-lg text-card-foreground">Voting</h3>
+                    <h3 className="font-bold text-lg text-card-foreground">{tGame('rules.voting')}</h3>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
-                    <li>Vote for who you think is the Imposter</li>
-                    <li>The player with the most votes is eliminated</li>
-                    <li>If the Imposter is caught, <span className="text-emerald-500 font-bold">Citizens win!</span></li>
-                    <li>If a Citizen is eliminated, <span className="text-rose-500 font-bold">Imposter wins!</span></li>
+                    {(tGame('rules.votingRules', { returnObjects: true }) as string[]).map((rule, i) => (
+                      <li key={i} dangerouslySetInnerHTML={{
+                        __html: rule
+                          .replace('<citizen>', '<span class="text-emerald-500 font-bold">')
+                          .replace('</citizen>', '</span>')
+                          .replace('<imposter>', '<span class="text-rose-500 font-bold">')
+                          .replace('</imposter>', '</span>')
+                      }} />
+                    ))}
                   </ul>
                 </section>
 
                 <section>
                   <div className="flex items-center gap-2 mb-2">
                     <Trophy className="w-5 h-5 text-yellow-500" />
-                    <h3 className="font-bold text-lg text-card-foreground">Tips</h3>
+                    <h3 className="font-bold text-lg text-card-foreground">{tGame('rules.tips')}</h3>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
-                    <li>Pay attention to who hesitates or gives generic hints</li>
-                    <li>As an Imposter, listen carefully to others' hints for clues</li>
-                    <li>Don't give hints that are too obvious - it might help the Imposter!</li>
+                    {(tGame('rules.tipsList', { returnObjects: true }) as string[]).map((tip, i) => (
+                      <li key={i}>{tip}</li>
+                    ))}
                   </ul>
                 </section>
               </div>
@@ -1300,7 +1432,7 @@ function App() {
                   onClick={() => setIsRulesOpen(false)}
                   className="w-full h-12 font-heading font-black uppercase tracking-wider"
                 >
-                  Got It!
+                  {tGame('rules.gotIt')}
                 </Button>
               </div>
             </motion.div>
@@ -1331,6 +1463,49 @@ function App() {
           )
         }
       </Portal >
+
+      {/* CATEGORY DROPDOWN - Portal ile body'ye taşındı, modal dışına taşar */}
+      <Portal>
+        <AnimatePresence>
+          {isCategoryOpen && categoryButtonRef.current && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'fixed',
+                top: categoryButtonRef.current.getBoundingClientRect().bottom + 8,
+                left: categoryButtonRef.current.getBoundingClientRect().left,
+                width: categoryButtonRef.current.getBoundingClientRect().width,
+              }}
+              className="bg-card border-4 border-border rounded-2xl shadow-2xl overflow-hidden z-[99999] max-h-[300px] overflow-y-auto custom-scrollbar"
+            >
+              <button
+                type="button"
+                onClick={() => { setSelectedCategory(''); setIsCategoryOpen(false); }}
+                className={`w-full px-4 py-3 text-left text-sm font-black uppercase tracking-wide hover:bg-muted transition-colors flex items-center gap-3 ${selectedCategory === '' ? 'bg-primary/20 text-primary' : 'text-card-foreground'}`}
+              >
+                <Lightbulb className="w-4 h-4" />
+                {t('lobby.random')}
+                {selectedCategory === '' && <Check className="w-4 h-4 ml-auto" />}
+              </button>
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => { setSelectedCategory(cat.name); setIsCategoryOpen(false); }}
+                  className={`w-full px-4 py-3 text-left text-sm font-black uppercase tracking-wide hover:bg-muted transition-colors flex items-center gap-3 ${selectedCategory === cat.name ? 'bg-primary/20 text-primary' : 'text-card-foreground'}`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-primary/50" />
+                  {t(`categories.${cat.name}`)}
+                  {selectedCategory === cat.name && <Check className="w-4 h-4 ml-auto" />}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Portal>
 
     </div >
   );

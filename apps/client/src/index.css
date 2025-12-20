@@ -87,23 +87,26 @@
   --radius: 1.5rem;
 
   /* Body gradient colors */
-  --gradient-start: 215 85% 55%;
-  --gradient-end: 215 85% 40%;
+  /* PREMIUM BLUE: Deeper, richer blue instead of flat sky blue */
+  --gradient-start: 220 80% 50%;
+  /* Rich Royal Blue */
+  --gradient-end: 220 90% 30%;
+  /* Deep Ocean Blue */
 }
 
 .dark {
   /* MYSTIC VIOLET PALETTE - Imposter Theme */
-  --background: 263 70% 8%;
+  --background: 265 60% 10%;
   /* Deep violet-black */
   --foreground: 220 15% 88%;
   /* Softer slate-white instead of pure white */
 
-  --card: 263 50% 12%;
+  --card: 265 40% 14%;
   /* Dark violet surface */
   --card-foreground: 220 15% 85%;
   /* Soft slate for better reading comfort */
 
-  --popover: 263 50% 14%;
+  --popover: 265 40% 16%;
   --popover-foreground: 220 15% 85%;
 
   /* Primary stays GOLD for contrast & brand */
@@ -114,8 +117,8 @@
   --secondary: 280 80% 60%;
   --secondary-foreground: 220 15% 92%;
 
-  --muted: 263 40% 18%;
-  --muted-foreground: 270 15% 55%;
+  --muted: 265 30% 20%;
+  --muted-foreground: 270 15% 60%;
 
   /* Accent: Neon Magenta */
   --accent: 320 100% 60%;
@@ -124,13 +127,16 @@
   --destructive: 0 85% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 263 40% 25%;
-  --input: 263 40% 15%;
+  --border: 265 30% 25%;
+  --input: 265 30% 18%;
   --ring: 280 80% 60%;
 
   /* Dark mode gradient colors */
-  --gradient-start: 263 60% 18%;
-  --gradient-end: 263 70% 6%;
+  /* PREMIUM VOID: More complex, deep space purple */
+  --gradient-start: 265 50% 20%;
+  /* Deep Mystic Purple */
+  --gradient-end: 265 60% 08%;
+  /* Almost Black Violet */
 }
 
 @layer base {
@@ -149,8 +155,35 @@
     @apply bg-background text-foreground min-h-screen font-sans antialiased;
     overflow: visible;
     background-image: radial-gradient(circle at center, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-end)) 100%);
-    cursor: default;
+
+    /* Custom Game Cursor Variable */
+    --cursor-url: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.5 2L13 29.5L16.5 17L29 13.5L5.5 2Z' fill='%23FFC107' stroke='%233D2914' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+    cursor: var(--cursor-url) 2 2, auto;
+
     transition: background-image 0.5s ease, color 0.3s ease;
+  }
+
+  /* FORCE CUSTOM CURSOR ON INTERACTIVE ELEMENTS */
+  /* This prevents the browser from switching to 'pointer' (hand) or 'text' (beam) and losing the game feel */
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  .cursor-pointer {
+    cursor: var(--cursor-url) 2 2, auto !important;
+  }
+
+  /* Optional: If we want a specific 'pointer' state (e.g. same arrow but slightly different), update here.
+     For now, using the main arrow everywhere ensures consistency as requested. */
+  button:hover,
+  a:hover,
+  input:hover,
+  textarea:hover,
+  select:hover {
+    cursor: var(--cursor-url) 2 2, auto !important;
   }
 
   #root {
@@ -308,5 +341,108 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(215 60% 60%);
+  }
+
+  /* ====== THEME-AWARE BADGE STYLES ====== */
+
+  /* Category Badge - Amber/Gold */
+  .badge-category {
+    @apply px-4 h-10 rounded-xl flex items-center gap-2 font-bold uppercase tracking-wider text-xs shadow-md transition-all duration-300;
+    background: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(35 100% 45%) 100%);
+    border: 2px solid hsl(45 100% 60%);
+    border-bottom: 4px solid hsl(30 100% 35%);
+    color: hsl(20 80% 20%);
+  }
+
+  .dark .badge-category {
+    background: linear-gradient(135deg, hsl(45 90% 45%) 0%, hsl(35 85% 35%) 100%);
+    border-color: hsl(45 70% 55%);
+    border-bottom-color: hsl(30 80% 25%);
+    color: hsl(45 100% 95%);
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+  }
+
+  /* Status Badge - Success (Open) */
+  .badge-success {
+    @apply px-4 h-10 rounded-xl flex items-center gap-2 font-bold uppercase tracking-wider text-xs shadow-md transition-all duration-300;
+    background: linear-gradient(135deg, hsl(152 70% 45%) 0%, hsl(160 75% 35%) 100%);
+    border: 2px solid hsl(152 60% 55%);
+    border-bottom: 4px solid hsl(160 80% 25%);
+    color: white;
+  }
+
+  .dark .badge-success {
+    background: linear-gradient(135deg, hsl(152 65% 40%) 0%, hsl(160 70% 30%) 100%);
+    border-color: hsl(152 50% 50%);
+    border-bottom-color: hsl(160 70% 20%);
+    color: hsl(152 80% 90%);
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+  }
+
+  /* Status Badge - Danger (Playing) */
+  .badge-danger {
+    @apply px-4 h-10 rounded-xl flex items-center gap-2 font-bold uppercase tracking-wider text-xs shadow-md transition-all duration-300;
+    background: linear-gradient(135deg, hsl(0 85% 55%) 0%, hsl(350 80% 45%) 100%);
+    border: 2px solid hsl(0 75% 65%);
+    border-bottom: 4px solid hsl(350 85% 35%);
+    color: white;
+  }
+
+  .dark .badge-danger {
+    background: linear-gradient(135deg, hsl(0 80% 50%) 0%, hsl(350 75% 40%) 100%);
+    border-color: hsl(0 65% 55%);
+    border-bottom-color: hsl(350 80% 28%);
+    color: hsl(0 80% 95%);
+    box-shadow: 0 0 12px rgba(244, 63, 94, 0.3);
+  }
+
+  /* Player Count Badge - Neutral */
+  .badge-neutral {
+    @apply px-4 h-10 rounded-xl flex items-center gap-2 font-extrabold text-xs shadow-md transition-all duration-300;
+    background: white;
+    border: 2px solid hsl(215 20% 80%);
+    border-bottom: 4px solid hsl(215 25% 70%);
+    color: hsl(215 25% 25%);
+  }
+
+  .dark .badge-neutral {
+    background: hsl(263 45% 18%);
+    border-color: hsl(263 35% 35%);
+    border-bottom-color: hsl(263 40% 12%);
+    color: hsl(220 15% 88%);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+  }
+
+  /* Highlight Glow Animation */
+  @keyframes badge-pulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 8px rgba(var(--glow-color), 0.3);
+    }
+
+    50% {
+      box-shadow: 0 0 16px rgba(var(--glow-color), 0.5);
+    }
+  }
+
+  .badge-glow-amber {
+    --glow-color: 251, 191, 36;
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  .badge-glow-emerald {
+    --glow-color: 52, 211, 153;
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  .badge-glow-rose {
+    --glow-color: 244, 63, 94;
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  .badge-glow-violet {
+    --glow-color: 139, 92, 246;
+    animation: badge-pulse 2s ease-in-out infinite;
   }
 }

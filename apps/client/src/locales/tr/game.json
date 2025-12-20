@@ -1,0 +1,81 @@
+{
+    "roles": {
+        "citizen": "Vatandaş",
+        "imposter": "Sahtekar"
+    },
+    "phases": {
+        "lobby": "Lobi",
+        "roleReveal": "Rol Gösterimi",
+        "hintRound": "İpucu Turu",
+        "discussion": "Tartışma",
+        "voting": "Oylama",
+        "voteResult": "Oylama Sonucu",
+        "gameOver": "Oyun Bitti"
+    },
+    "room": {
+        "arena": "Oda",
+        "players": "Oyuncular",
+        "code": "Kod",
+        "category": "Kategori",
+        "word": "Kelime",
+        "unknown": "Bilinmiyor",
+        "ready": "Hazır",
+        "open": "Açık",
+        "playing": "Oyunda",
+        "locked": "Oda Kilitli"
+    },
+    "hints": {
+        "typeHint": "İpucunu yaz...",
+        "submit": "Gönder"
+    },
+    "voting": {
+        "voteNow": "Şimdi Oyla",
+        "voted": "Oylandı",
+        "tapToSelect": "Seçmek için dokun",
+        "voteBreakdown": "Oy Dağılımı",
+        "checkTable": "Detaylar için tabloya bak"
+    },
+    "results": {
+        "eliminated": "Elendi",
+        "noOneEliminated": "Kimse Elenmedi",
+        "citizensWin": "Vatandaşlar",
+        "imposterWins": "Sahtekar",
+        "won": "Kazandı!",
+        "playAgain": "Tekrar Oyna"
+    },
+    "messages": {
+        "needMorePlayers": "{{count}} oyuncu daha gerekli",
+        "ready": "Hazır!",
+        "waitingForHost": "Host bekleniyor...",
+        "yourTurn": "Senin Sıran",
+        "waiting": "Bekleniyor...",
+        "discuss": "Tartışın!"
+    },
+    "rules": {
+        "title": "Nasıl Oynanır",
+        "theGame": "Oyun",
+        "gameDesc": "Among Lies, bir oyuncunun gizlice <imposter>Sahtekar</imposter> olduğu, diğerlerinin ise <citizen>Vatandaş</citizen> olduğu bir sosyal çıkarım oyunudur. Vatandaşlar gizli kelimeyi bilir, ama Sahtekar bilmez!",
+        "hintRound": "İpucu Turu",
+        "hintRules": [
+            "Her oyuncu gizli kelimeyle ilgili <bold>tek kelimelik ipucu</bold> verir",
+            "Vatandaşlar: Kelimeyi bildiğini kanıtlayan ipuçları ver, ama çok açık yapma!",
+            "Sahtekar: Blöf yap! Kelimeyi bilmeden inandırıcı bir ipucu vermeye çalış"
+        ],
+        "discussion": "Tartışma",
+        "discussionDesc": "İpuçlarından sonra, kimin Sahtekar olduğunu düşündüğünüzü tartışın. İpuçlarını analiz edin - kimin ipucu şüpheli veya belirsiz görünüyor?",
+        "voting": "Oylama",
+        "votingRules": [
+            "Sahtekar olduğunu düşündüğün kişiye oy ver",
+            "En çok oy alan oyuncu elenir",
+            "Sahtekar yakalanırsa, <citizen>Vatandaşlar kazanır!</citizen>",
+            "Bir Vatandaş elenirse, <imposter>Sahtekar kazanır!</imposter>"
+        ],
+        "tips": "İpuçları",
+        "tipsList": [
+            "Kimin tereddüt ettiğine veya genel ipuçları verdiğine dikkat et",
+            "Sahtekar olarak, diğerlerinin ipuçlarını dikkatli dinle",
+            "Çok açık ipuçları verme - Sahtekar'a yardım edebilir!"
+        ],
+        "gotIt": "Anladım!"
+    }
+}

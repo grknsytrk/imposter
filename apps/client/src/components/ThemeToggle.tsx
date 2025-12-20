@@ -1,18 +1,28 @@
 import { Moon, Sun } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+// Helper to read initial theme
+const getInitialTheme = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return saved === 'dark' || (!saved && prefersDark);
+};
 
 export const ThemeToggle = () => {
-    const [isDark, setIsDark] = useState(false);
+    // Initialize state directly from localStorage
+    const [isDark, setIsDark] = useState(getInitialTheme);
+    const isInitialized = useRef(false);
 
+    // Apply theme class on mount (syncs if state was set before DOM)
     useEffect(() => {
-        const saved = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const shouldBeDark = saved === 'dark' || (!saved && prefersDark);
-        setIsDark(shouldBeDark);
-        document.documentElement.classList.toggle('dark', shouldBeDark);
+        document.documentElement.classList.toggle('dark', isDark);
+        isInitialized.current = true;
     }, []);
 
+    // Persist and apply on change (skip first render to avoid overwriting)
     useEffect(() => {
+        if (!isInitialized.current) return; // Skip initial render
         document.documentElement.classList.toggle('dark', isDark);
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }, [isDark]);
@@ -20,7 +30,7 @@ export const ThemeToggle = () => {
     return (
         <button
             onClick={() => setIsDark(!isDark)}
-            className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border-2 border-white/20 hover:bg-white/20 text-white shadow-md transition-all hover:scale-110 active:scale-95"
+            className="group w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/20 transition-all"
             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
             <div className="relative">

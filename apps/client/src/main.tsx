@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useState, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
 import './index.css'
+import './lib/i18n' // Initialize i18n
 import App from './App.tsx'
 import { AuthPage } from './pages/AuthPage.tsx'
 import { ProfileSetup } from './pages/ProfileSetup.tsx'
