@@ -161,7 +161,8 @@ export function ProfileSetup() {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="Choose a username..."
-                                className="premium-input w-full pl-12 pr-12 h-14 text-card-foreground"
+                                className="premium-input w-full h-14 text-card-foreground"
+                                style={{ paddingLeft: '48px', paddingRight: '48px' }}
                                 minLength={3}
                                 maxLength={20}
                             />
