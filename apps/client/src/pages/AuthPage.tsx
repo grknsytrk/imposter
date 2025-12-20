@@ -23,6 +23,38 @@ export function AuthPage() {
 
     const { signIn, signUp, signInWithGoogle, resetPassword } = useAuthStore();
 
+    // Supabase hata mesajlarını kullanıcı dostu mesajlara çevir
+    const formatErrorMessage = (message: string): string => {
+        const errorMap: Record<string, string> = {
+            'Invalid login credentials': 'Wrong email/username or password. Try again!',
+            'Email not confirmed': 'Please check your email and confirm your account first.',
+            'User already registered': 'This email is already registered. Try logging in!',
+            'Password should be at least 6 characters': 'Password must be at least 6 characters.',
+            'Unable to validate email address: invalid format': 'Please enter a valid email address.',
+            'Email rate limit exceeded': 'Too many attempts. Please wait a minute and try again.',
+            'For security purposes, you can only request this once every 60 seconds': 'Please wait 60 seconds before trying again.',
+            'User not found': 'No account found with this email/username.',
+            'Invalid email or password': 'Wrong email or password. Try again!',
+            'Signup requires a valid password': 'Please enter a valid password.',
+            'To signup, please provide your email': 'Please enter your email address.',
+        };
+
+        // Tam eşleşme kontrolü
+        if (errorMap[message]) {
+            return errorMap[message];
+        }
+
+        // Kısmi eşleşme kontrolü
+        for (const [key, value] of Object.entries(errorMap)) {
+            if (message.toLowerCase().includes(key.toLowerCase())) {
+                return value;
+            }
+        }
+
+        // Bilinmeyen hatalar için genel mesaj
+        return message;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -32,7 +64,7 @@ export function AuthPage() {
             if (isLogin) {
                 // Login: email veya username ile giriş yap
                 const { error } = await signIn(emailOrUsername, password);
-                if (error) setError(error.message);
+                if (error) setError(formatErrorMessage(error.message));
             } else {
                 // Sign up: username kontrolü
                 if (!username.trim()) {
@@ -46,11 +78,11 @@ export function AuthPage() {
                     return;
                 }
                 const { error } = await signUp(email, password, username);
-                if (error) setError(error.message);
+                if (error) setError(formatErrorMessage(error.message));
                 else setError('Check your email for confirmation link!');
             }
         } catch (err) {
-            setError('An unexpected error occurred');
+            setError('Something went wrong. Please try again!');
         } finally {
             setLoading(false);
         }
@@ -432,7 +464,7 @@ export function AuthPage() {
                                             const { error } = await resetPassword(forgotEmail);
 
                                             if (error) {
-                                                setForgotError(error.message);
+                                                setForgotError(formatErrorMessage(error.message));
                                             } else {
                                                 setForgotMessage('Check your email for a password reset link!');
                                             }
