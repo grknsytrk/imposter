@@ -37,6 +37,9 @@ export function AuthPage() {
             'Invalid email or password': 'Wrong email or password. Try again!',
             'Signup requires a valid password': 'Please enter a valid password.',
             'To signup, please provide your email': 'Please enter your email address.',
+            'Password is too weak': 'Please choose a stronger password.',
+            'Password should be different from the old password': 'Please choose a different password.',
+            'New password should be different from the old password': 'Please choose a different password.',
         };
 
         // Tam eşleşme kontrolü
