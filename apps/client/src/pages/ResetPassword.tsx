@@ -49,9 +49,18 @@ export function ResetPassword() {
 
         const { error } = await updatePassword(password);
 
+        setLoading(false); // Always reset loading state
+
         if (error) {
-            setError(error.message);
-            setLoading(false);
+            // Format error messages to be user-friendly
+            const errorMsg = error.message.toLowerCase();
+            if (errorMsg.includes('same') || errorMsg.includes('different') || errorMsg.includes('should be different')) {
+                setError('Please choose a different password than your current one.');
+            } else if (errorMsg.includes('weak') || errorMsg.includes('strong')) {
+                setError('Please choose a stronger password.');
+            } else {
+                setError(error.message);
+            }
         } else {
             setSuccess(true);
             // 2 saniye sonra login'e yönlendir
