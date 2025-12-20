@@ -95,7 +95,7 @@ export function AuthPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-4">
+        <div className="min-h-screen flex flex-col items-center pt-12 md:pt-20 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-4">
             <motion.div
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -103,7 +103,7 @@ export function AuthPage() {
                 className="w-full max-w-md"
             >
                 {/* Logo */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-8 h-20 flex flex-col justify-end">
                     <h1 className="text-5xl font-heading font-black text-white tracking-wide drop-shadow-lg">
                         AMONG <span className="text-primary">LIES</span>
                     </h1>
@@ -113,7 +113,10 @@ export function AuthPage() {
                 </div>
 
                 {/* Auth Card */}
-                <div className="premium-card p-8">
+                <motion.div
+                    layout
+                    className="premium-card p-8 min-h-[520px] flex flex-col"
+                >
                     {/* Tab Switch */}
                     <div className="flex gap-2 mb-6">
                         <button
@@ -285,7 +288,7 @@ export function AuthPage() {
                         </svg>
                         Continue with Google
                     </Button>
-                </div>
+                </motion.div>
 
                 {/* Footer */}
                 <p className="text-center text-white/50 text-sm mt-6 font-bold">
