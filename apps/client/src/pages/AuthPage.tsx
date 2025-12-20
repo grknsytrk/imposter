@@ -155,90 +155,100 @@ export function AuthPage() {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-
-                        {/* Login: Email or Username */}
-                        {isLogin ? (
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-                                <input
-                                    type="text"
-                                    value={emailOrUsername}
-                                    onChange={(e) => setEmailOrUsername(e.target.value)}
-                                    placeholder="Email or Username"
-                                    required
-                                    className="premium-input w-full h-14"
-                                    style={{ paddingLeft: '48px' }}
-                                />
-                            </div>
-                        ) : (
-                            <>
-                                {/* Sign Up: Username */}
-                                <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-                                    <input
-                                        type="text"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        placeholder="Choose a Username"
-                                        required
-                                        minLength={3}
-                                        className="premium-input w-full h-14"
-                                        style={{ paddingLeft: '48px' }}
-                                    />
-                                </div>
-                                {/* Sign Up: Email */}
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="Email Address"
-                                        required
-                                        className="premium-input w-full h-14"
-                                        style={{ paddingLeft: '48px' }}
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Password"
-                                required
-                                minLength={6}
-                                className="premium-input w-full h-14"
-                                style={{ paddingLeft: '48px' }}
-                            />
-                        </div>
-
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full h-14 text-lg font-heading font-black uppercase tracking-wider"
-                        >
-                            {loading ? 'Please wait...' : isLogin ? 'Login' : 'Create Account'}
-                        </Button>
-
-                        {/* Forgot Password Link - Only show on Login */}
-                        {isLogin && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setForgotEmail('');
-                                    setForgotMessage('');
-                                    setForgotError('');
-                                    setIsForgotOpen(true);
-                                }}
-                                className="w-full text-center text-sm text-muted-foreground hover:text-primary font-bold transition-colors mt-2"
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={isLogin ? 'login-form' : 'signup-form'}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.15, ease: 'easeInOut' }}
+                                className="space-y-4"
                             >
-                                Forgot your password?
-                            </button>
-                        )}
+                                {/* Login: Email or Username */}
+                                {isLogin ? (
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                                        <input
+                                            type="text"
+                                            value={emailOrUsername}
+                                            onChange={(e) => setEmailOrUsername(e.target.value)}
+                                            placeholder="Email or Username"
+                                            required
+                                            className="premium-input w-full h-14"
+                                            style={{ paddingLeft: '48px' }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Sign Up: Username */}
+                                        <div className="relative">
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                                            <input
+                                                type="text"
+                                                value={username}
+                                                onChange={(e) => setUsername(e.target.value)}
+                                                placeholder="Choose a Username"
+                                                required
+                                                minLength={3}
+                                                className="premium-input w-full h-14"
+                                                style={{ paddingLeft: '48px' }}
+                                            />
+                                        </div>
+                                        {/* Sign Up: Email */}
+                                        <div className="relative">
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="Email Address"
+                                                required
+                                                className="premium-input w-full h-14"
+                                                style={{ paddingLeft: '48px' }}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Password"
+                                        required
+                                        minLength={6}
+                                        className="premium-input w-full h-14"
+                                        style={{ paddingLeft: '48px' }}
+                                    />
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full h-14 text-lg font-heading font-black uppercase tracking-wider"
+                                >
+                                    {loading ? 'Please wait...' : isLogin ? 'Login' : 'Create Account'}
+                                </Button>
+
+                                {/* Forgot Password Link - Only show on Login */}
+                                {isLogin && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setForgotEmail('');
+                                            setForgotMessage('');
+                                            setForgotError('');
+                                            setIsForgotOpen(true);
+                                        }}
+                                        className="w-full text-center text-sm text-muted-foreground hover:text-primary font-bold transition-colors mt-2"
+                                    >
+                                        Forgot your password?
+                                    </button>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
                     </form>
 
                     {/* Divider */}
