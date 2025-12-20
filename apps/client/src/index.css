@@ -49,8 +49,8 @@
 
   /* Surface: Crisp White with a slight blue tint */
   --card: 210 100% 98%;
-  --card-foreground: 222 47% 11%;
-  /* Dark text on cards */
+  --card-foreground: 215 25% 27%;
+  /* Soft dark slate for better readability */
 
   --popover: 210 100% 98%;
   --popover-foreground: 222 47% 11%;
@@ -68,7 +68,8 @@
 
   /* Muted: Lighter Blue for backgrounds/dividers */
   --muted: 215 50% 30%;
-  --muted-foreground: 215 80% 85%;
+  --muted-foreground: 215 25% 45%;
+  /* Darker for better readability on white cards */
 
   /* Accent: Hot Pink/Magenta */
   --accent: 320 90% 60%;
@@ -94,15 +95,16 @@
   /* MYSTIC VIOLET PALETTE - Imposter Theme */
   --background: 263 70% 8%;
   /* Deep violet-black */
-  --foreground: 270 20% 98%;
-  /* Soft lavender white */
+  --foreground: 220 15% 88%;
+  /* Softer slate-white instead of pure white */
 
   --card: 263 50% 12%;
   /* Dark violet surface */
-  --card-foreground: 270 20% 95%;
+  --card-foreground: 220 15% 85%;
+  /* Soft slate for better reading comfort */
 
   --popover: 263 50% 14%;
-  --popover-foreground: 270 20% 95%;
+  --popover-foreground: 220 15% 85%;
 
   /* Primary stays GOLD for contrast & brand */
   --primary: 45 100% 50%;
@@ -110,10 +112,10 @@
 
   /* Secondary: Electric Purple */
   --secondary: 280 80% 60%;
-  --secondary-foreground: 270 20% 98%;
+  --secondary-foreground: 220 15% 92%;
 
   --muted: 263 40% 18%;
-  --muted-foreground: 270 15% 60%;
+  --muted-foreground: 270 15% 55%;
 
   /* Accent: Neon Magenta */
   --accent: 320 100% 60%;
@@ -164,7 +166,50 @@
   h5,
   h6 {
     @apply font-heading tracking-wide text-white;
-    text-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Kart içindeki başlıklar premium 3D görünüm (Keskin gölge, bulanıklık yok) */
+  .premium-card h1,
+  .premium-card h2,
+  .premium-card h3,
+  .premium-card h4,
+  .premium-card h5,
+  .premium-card h6 {
+    color: #334155;
+    /* slate-700: Daha kaliteli duran bir gri/lacivert */
+    text-shadow:
+      0 1px 0 #fff,
+      /* Üstten ince beyaz ışık (kabartma etkisi) */
+      0 2px 0 rgba(0, 0, 0, 0.1),
+      /* Hafif derinlik */
+      0 3px 0 rgba(0, 0, 0, 0.05);
+    letter-spacing: -0.02em;
+    /* Daha sıkı ve profesyonel durur */
+  }
+
+  .dark .premium-card h1,
+  .dark .premium-card h2,
+  .dark .premium-card h3,
+  .dark .premium-card h4,
+  .dark .premium-card h5,
+  .dark .premium-card h6 {
+    color: #cbd5e1;
+    /* slate-300: Softer off-white for dark mode cards */
+    text-shadow:
+      0 2px 0 rgba(0, 0, 0, 0.5),
+      /* Deeper shadow for dark backgrounds */
+      0 4px 12px rgba(139, 92, 246, 0.2);
+    /* Subtle violet ambient glow */
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   }
 }
 
