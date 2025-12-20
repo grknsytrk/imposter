@@ -15,12 +15,28 @@ function AuthWrapper() {
   const [initialized, setInitialized] = useState(false);
   const connectionAttempted = useRef(false);
   const [hasConnectedOnce, setHasConnectedOnce] = useState(false);
+  const previousUserId = useRef<string | null>(null);
   const location = useLocation();
 
   // Initialize auth
   useEffect(() => {
     initialize().then(() => setInitialized(true));
   }, [initialize]);
+
+  // Reset connection state when user changes (important for email/password login)
+  useEffect(() => {
+    const currentUserId = user?.id ?? null;
+
+    // If user changed (new login or logout), reset connection tracking
+    if (currentUserId !== previousUserId.current) {
+      if (currentUserId && previousUserId.current !== null) {
+        // New user logged in (different from before), reset connection attempt
+        connectionAttempted.current = false;
+        setHasConnectedOnce(false);
+      }
+      previousUserId.current = currentUserId;
+    }
+  }, [user?.id]);
 
   // Auto-connect when profile is ready
   useEffect(() => {
@@ -70,9 +86,27 @@ function AuthWrapper() {
     return <AuthPage />;
   }
 
-  // Logged in but no profile → Profile setup
-  if (!profile) {
+  // Logged in but no profile (and not loading) → Profile setup
+  // Wait until profileLoading is false to prevent flash
+  if (!profile && !profileLoading) {
     return <ProfileSetup />;
+  }
+
+  // Profile is still loading after user logged in → show loading, not ProfileSetup
+  if (!profile && profileLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: `radial-gradient(circle at center, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-end)) 100%)`
+        }}
+      >
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white font-heading font-black uppercase tracking-widest">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   // Logged in with profile → App (even if temporarily disconnected)
