@@ -17,17 +17,17 @@ export function ResetPassword() {
     const navigate = useNavigate();
 
     // Supabase otomatik olarak reset linkinden gelen kullanıcıyı login yapar
-    // Session yoksa bu sayfaya erişim yok
+    // Session yoksa ve URL'de recovery token da yoksa bu sayfaya erişim yok
     useEffect(() => {
-        if (!session) {
-            // Kısa bir süre bekle, belki session yükleniyordur
-            const timer = setTimeout(() => {
-                if (!session) {
-                    navigate('/auth');
-                }
-            }, 2000);
-            return () => clearTimeout(timer);
+        // Check if URL has recovery hash (Supabase password reset tokens)
+        const hash = window.location.hash;
+        const hasRecoveryToken = hash.includes('type=recovery') || hash.includes('access_token');
+
+        if (!session && !hasRecoveryToken) {
+            // No session AND no recovery token = unauthorized access, redirect immediately
+            navigate('/auth');
         }
+        // If hasRecoveryToken is true, Supabase will process it and set session automatically
     }, [session, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
