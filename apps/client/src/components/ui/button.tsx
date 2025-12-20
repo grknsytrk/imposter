@@ -3,6 +3,7 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { useGameSound } from "@/hooks/useGameSound"
 
 const buttonVariants = cva(
     "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-base font-heading font-black tracking-wide transition-all duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background select-none active:scale-95",
@@ -43,6 +44,7 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, children, ...props }, ref) => {
         const Comp = asChild ? Slot : "button"
+        const { playTone } = useGameSound();
 
         // Only apply shine structure if not using Slot (simplified for safety)
         if (asChild) {
@@ -61,6 +63,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             <button
                 className={cn(buttonVariants({ variant, size, className }), "group relative overflow-visible")}
                 ref={ref}
+                onMouseEnter={() => playTone('hover')}
+                onClick={(e) => {
+                    playTone('click');
+                    props.onClick?.(e);
+                }}
                 {...props}
             >
                 {/* Shine Container - Clipped */}

@@ -1,0 +1,84 @@
+{
+    "app": {
+        "title": "Among Lies",
+        "tagline": "Find the Liar",
+        "loading": "Loading...",
+        "connecting": "Connecting..."
+    },
+    "status": {
+        "active": "Active",
+        "online": "Online",
+        "offline": "Offline"
+    },
+    "buttons": {
+        "create": "Create",
+        "join": "Join",
+        "start": "Start",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "leave": "Leave",
+        "done": "Done",
+        "refresh": "Refresh",
+        "copy": "Copy",
+        "send": "Send",
+        "unlock": "Unlock"
+    },
+    "nav": {
+        "rules": "Rules",
+        "profile": "Profile",
+        "logout": "Logout"
+    },
+    "matchmaking": {
+        "title": "Matchmaking",
+        "hostGame": "Host Game",
+        "createNewRoom": "Create New Room",
+        "orJoin": "Or Join",
+        "enterRoomCode": "Enter Room Code",
+        "codePlaceholder": "Code..."
+    },
+    "arenas": {
+        "title": "Public Rooms",
+        "activeGames": "Active Games",
+        "noRooms": "No Rooms Found",
+        "players": "Players"
+    },
+    "lobby": {
+        "title": "Lobby",
+        "createRoom": "Create Room",
+        "joinRoom": "Join Room",
+        "roomCode": "Room Code",
+        "enterCode": "Enter code...",
+        "availableRooms": "Available Rooms",
+        "noRooms": "No rooms available",
+        "private": "Private",
+        "roomName": "Room Name",
+        "category": "Category",
+        "random": "Random",
+        "privateRoom": "Private Room",
+        "password": "Password"
+    },
+    "chat": {
+        "title": "Party Chat",
+        "noMessages": "No messages yet",
+        "placeholder": "SAY SOMETHING...",
+        "useChat": "Use chat to discuss"
+    },
+    "profile": {
+        "title": "Profile",
+        "username": "Username"
+    },
+    "categories": {
+        "Animals": "Animals",
+        "Food": "Food",
+        "Countries": "Countries",
+        "Cities": "Cities",
+        "Jobs": "Jobs",
+        "Sports": "Sports",
+        "Movies": "Movies",
+        "Technology": "Technology",
+        "Super Heroes": "Super Heroes",
+        "Instruments": "Instruments",
+        "Clash Royale": "Clash Royale",
+        "Anime": "Anime"
+    }
+}

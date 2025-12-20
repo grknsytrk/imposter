@@ -1,0 +1,84 @@
+{
+    "app": {
+        "title": "Among Lies",
+        "tagline": "Yalancıyı Bul",
+        "loading": "Yükleniyor...",
+        "connecting": "Bağlanıyor..."
+    },
+    "status": {
+        "active": "Aktif",
+        "online": "Çevrimiçi",
+        "offline": "Çevrimdışı"
+    },
+    "buttons": {
+        "create": "Oluştur",
+        "join": "Katıl",
+        "start": "Başlat",
+        "cancel": "İptal",
+        "confirm": "Onayla",
+        "leave": "Ayrıl",
+        "done": "Tamam",
+        "refresh": "Yenile",
+        "copy": "Kopyala",
+        "send": "Gönder",
+        "unlock": "Kilidi Aç"
+    },
+    "nav": {
+        "rules": "Kurallar",
+        "profile": "Profil",
+        "logout": "Çıkış"
+    },
+    "matchmaking": {
+        "title": "Eşleşme",
+        "hostGame": "Oyun Kur",
+        "createNewRoom": "Yeni Oda Oluştur",
+        "orJoin": "Ya da Katıl",
+        "enterRoomCode": "Oda Kodu Gir",
+        "codePlaceholder": "Kod..."
+    },
+    "arenas": {
+        "title": "Açık Odalar",
+        "activeGames": "Aktif Oyunlar",
+        "noRooms": "Oda Bulunamadı",
+        "players": "Oyuncular"
+    },
+    "lobby": {
+        "title": "Lobi",
+        "createRoom": "Oda Oluştur",
+        "joinRoom": "Odaya Katıl",
+        "roomCode": "Oda Kodu",
+        "enterCode": "Kod gir...",
+        "availableRooms": "Açık Odalar",
+        "noRooms": "Oda bulunamadı",
+        "private": "Özel",
+        "roomName": "Oda Adı",
+        "category": "Kategori",
+        "random": "Rastgele",
+        "privateRoom": "Özel Oda",
+        "password": "Şifre"
+    },
+    "chat": {
+        "title": "Parti Sohbeti",
+        "noMessages": "Henüz mesaj yok",
+        "placeholder": "BİR ŞEYLER SÖYLE...",
+        "useChat": "Tartışmak için sohbeti kullan"
+    },
+    "profile": {
+        "title": "Profil",
+        "username": "Kullanıcı Adı"
+    },
+    "categories": {
+        "Animals": "Hayvanlar",
+        "Food": "Yiyecekler",
+        "Countries": "Ülkeler",
+        "Cities": "Şehirler",
+        "Jobs": "Meslekler",
+        "Sports": "Sporlar",
+        "Movies": "Filmler",
+        "Technology": "Teknoloji",
+        "Super Heroes": "Süper Kahramanlar",
+        "Instruments": "Enstrümanlar",
+        "Clash Royale": "Clash Royale",
+        "Anime": "Anime"
+    }
+}

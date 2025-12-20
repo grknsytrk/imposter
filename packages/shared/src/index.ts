@@ -41,7 +41,7 @@ export type GameState = {
     votes: Record<string, string>; // voterId -> votedPlayerId
     eliminatedPlayerId?: string;   // Elenen oyuncu
     winner?: 'CITIZENS' | 'IMPOSTER';
-    hints: Record<string, string>; // playerId -> hint
+    hints: Record<string, string[]>; // playerId -> hints array (per round)
 };
 
 // ==================== ROOM ====================
@@ -70,50 +70,77 @@ export type ChatMessage = {
 // ==================== CATEGORIES & WORDS ====================
 export type Category = {
     name: string;
-    words: string[];
+    words: string[] | { en: string[]; tr: string[] };
 };
 
 export const CATEGORIES: Category[] = [
     {
         name: 'Animals',
-        words: ['Lion', 'Elephant', 'Eagle', 'Dog', 'Cat', 'Rabbit', 'Horse', 'Cow', 'Sheep', 'Fish', 'Parrot', 'Penguin', 'Crocodile', 'Giraffe', 'Monkey']
+        words: {
+            en: ['Lion', 'Elephant', 'Eagle', 'Dog', 'Cat', 'Rabbit', 'Horse', 'Cow', 'Sheep', 'Fish', 'Parrot', 'Penguin', 'Crocodile', 'Giraffe', 'Monkey', 'Tiger', 'Wolf', 'Fox', 'Bear', 'Panda', 'Koala', 'Kangaroo', 'Zebra', 'Hippo', 'Rhino', 'Cheetah', 'Leopard', 'Whale', 'Dolphin', 'Shark', 'Octopus', 'Spider', 'Snake', 'Turtle', 'Frog', 'Butterfly', 'Bee', 'Ant', 'Bat', 'Owl', 'Swan', 'Peacock', 'Flamingo', 'Hamster', 'Squirrel'],
+            tr: ['Aslan', 'Fil', 'Kartal', 'Köpek', 'Kedi', 'Tavşan', 'At', 'İnek', 'Koyun', 'Balık', 'Papağan', 'Penguen', 'Timsah', 'Zürafa', 'Maymun', 'Kaplan', 'Kurt', 'Tilki', 'Ayı', 'Panda', 'Koala', 'Kanguru', 'Zebra', 'Su Aygırı', 'Gergedan', 'Çita', 'Leopar', 'Balina', 'Yunus', 'Köpekbalığı', 'Ahtapot', 'Örümcek', 'Yılan', 'Kaplumbağa', 'Kurbağa', 'Kelebek', 'Arı', 'Karınca', 'Yarasa', 'Baykuş', 'Kuğu', 'Tavus Kuşu', 'Flamingo', 'Hamster', 'Sincap']
+        }
     },
     {
         name: 'Food',
-        words: ['Pizza', 'Burger', 'Kebab', 'Sushi', 'Cake', 'Ice Cream', 'Chocolate', 'Apple', 'Banana', 'Orange', 'Rice', 'Pasta', 'Soup', 'Salad', 'Sandwich']
+        words: {
+            en: ['Pizza', 'Burger', 'Kebab', 'Sushi', 'Cake', 'Ice Cream', 'Chocolate', 'Apple', 'Banana', 'Orange', 'Rice', 'Pasta', 'Soup', 'Salad', 'Sandwich', 'Steak', 'Taco', 'Burrito', 'Waffle', 'Pancake', 'Donut', 'Cookie', 'Muffin', 'Croissant', 'Bread', 'Cheese', 'Egg', 'Milk', 'Yogurt', 'Honey', 'Watermelon', 'Strawberry', 'Grape', 'Pineapple', 'Mango', 'Peach', 'Kiwi', 'Carrot', 'Potato', 'Tomato', 'Cucumber', 'Onion', 'Garlic', 'Pepper', 'Corn'],
+            tr: ['Pizza', 'Hamburger', 'Kebap', 'Suşi', 'Pasta', 'Dondurma', 'Çikolata', 'Elma', 'Muz', 'Portakal', 'Pilav', 'Makarna', 'Çorba', 'Salata', 'Sandviç', 'Biftek', 'Tako', 'Burrito', 'Waffle', 'Krep', 'Donut', 'Kurabiye', 'Kek', 'Kruvasan', 'Ekmek', 'Peynir', 'Yumurta', 'Süt', 'Yoğurt', 'Bal', 'Karpuz', 'Çilek', 'Üzüm', 'Ananas', 'Mango', 'Şeftali', 'Kivi', 'Havuç', 'Patates', 'Domates', 'Salatalık', 'Soğan', 'Sarımsak', 'Biber', 'Mısır']
+        }
     },
     {
         name: 'Countries',
-        words: ['Turkey', 'Germany', 'France', 'Italy', 'Spain', 'Japan', 'China', 'Brazil', 'Mexico', 'Canada', 'Australia', 'Egypt', 'India', 'Russia', 'UK']
+        words: {
+            en: ['Turkey', 'Germany', 'France', 'Italy', 'Spain', 'Japan', 'China', 'Brazil', 'Mexico', 'Canada', 'Australia', 'Egypt', 'India', 'Russia', 'UK', 'USA', 'Argentina', 'Portugal', 'Netherlands', 'Sweden', 'Norway', 'Finland', 'Denmark', 'Switzerland', 'Austria', 'Greece', 'South Korea', 'Thailand', 'Vietnam', 'Singapore', 'Poland', 'Belgium', 'Ukraine', 'Iran', 'Saudi Arabia', 'UAE', 'South Africa', 'Nigeria', 'Kenya', 'Morocco', 'Chile', 'Colombia', 'Peru', 'New Zealand', 'Indonesia'],
+            tr: ['Türkiye', 'Almanya', 'Fransa', 'İtalya', 'İspanya', 'Japonya', 'Çin', 'Brezilya', 'Meksika', 'Kanada', 'Avustralya', 'Mısır', 'Hindistan', 'Rusya', 'İngiltere', 'Amerika', 'Arjantin', 'Portekiz', 'Hollanda', 'İsveç', 'Norveç', 'Finlandiya', 'Danimarka', 'İsviçre', 'Avusturya', 'Yunanistan', 'Güney Kore', 'Tayland', 'Vietnam', 'Singapur', 'Polonya', 'Belçika', 'Ukrayna', 'İran', 'Suudi Arabistan', 'BAE', 'Güney Afrika', 'Nijerya', 'Kenya', 'Fas', 'Şili', 'Kolombiya', 'Peru', 'Yeni Zelanda', 'Endonezya']
+        }
+    },
+    {
+        name: 'Cities',
+        words: {
+            en: ['Istanbul', 'Ankara', 'Izmir', 'London', 'Paris', 'Berlin', 'Rome', 'Madrid', 'New York', 'Tokyo', 'Seoul', 'Beijing', 'Moscow', 'Dubai', 'Sydney', 'Amsterdam', 'Barcelona', 'Vienna', 'Prague', 'Venice', 'Rio de Janeiro', 'Buenos Aires', 'Cairo', 'Cape Town', 'Toronto', 'Los Angeles', 'Chicago', 'San Francisco', 'Miami', 'Las Vegas', 'Kyoto', 'Osaka', 'Shanghai', 'Hong Kong', 'Singapore', 'Bangkok', 'Mumbai', 'Jerusalem', 'Athens', 'Stockholm', 'Oslo', 'Copenhagen', 'Helsinki', 'Dublin', 'Warsaw'],
+            tr: ['İstanbul', 'Ankara', 'İzmir', 'Londra', 'Paris', 'Berlin', 'Roma', 'Madrid', 'New York', 'Tokyo', 'Seul', 'Pekin', 'Moskova', 'Dubai', 'Sidney', 'Amsterdam', 'Barselona', 'Viyana', 'Prag', 'Venedik', 'Rio de Janeiro', 'Buenos Aires', 'Kahire', 'Cape Town', 'Toronto', 'Los Angeles', 'Chicago', 'San Francisco', 'Miami', 'Las Vegas', 'Kyoto', 'Osaka', 'Şangay', 'Hong Kong', 'Singapur', 'Bangkok', 'Mumbai', 'Kudüs', 'Atina', 'Stockholm', 'Oslo', 'Kopenhag', 'Helsinki', 'Dublin', 'Varşova']
+        }
     },
     {
         name: 'Jobs',
-        words: ['Doctor', 'Teacher', 'Engineer', 'Chef', 'Pilot', 'Police', 'Firefighter', 'Lawyer', 'Nurse', 'Artist', 'Musician', 'Athlete', 'Driver', 'Waiter', 'Butcher']
+        words: {
+            en: ['Doctor', 'Teacher', 'Engineer', 'Chef', 'Pilot', 'Police', 'Firefighter', 'Lawyer', 'Nurse', 'Artist', 'Musician', 'Athlete', 'Driver', 'Waiter', 'Butcher', 'Architect', 'Scientist', 'Dentist', 'Pharmacist', 'Vet', 'Farmer', 'Carpenter', 'Electrician', 'Plumber', 'Baker', 'Barber', 'Actor', 'Dancer', 'Journalist', 'Writer', 'Programmer', 'Designer', 'Manager', 'Accountant', 'Cashier', 'Soldier', 'Sailor', 'Astronaut', 'Mechanic', 'Cleaner', 'Lifeguard', 'Photographer', 'Coach', 'Judge', 'Librarian'],
+            tr: ['Doktor', 'Öğretmen', 'Mühendis', 'Aşçı', 'Pilot', 'Polis', 'İtfaiyeci', 'Avukat', 'Hemşire', 'Sanatçı', 'Müzisyen', 'Sporcu', 'Şoför', 'Garson', 'Kasap', 'Mimar', 'Bilim İnsanı', 'Diş Hekimi', 'Eczacı', 'Veteriner', 'Çiftçi', 'Marangoz', 'Elektrikçi', 'Tesisatçı', 'Fırıncı', 'Berber', 'Aktör', 'Dansçı', 'Gazeteci', 'Yazar', 'Programcı', 'Tasarımcı', 'Müdür', 'Muhasebeci', 'Kasiyer', 'Asker', 'Denizci', 'Astronot', 'Tamirci', 'Temizlikçi', 'Cankurtaran', 'Fotoğrafçı', 'Antrenör', 'Hakim', 'Kütüphaneci']
+        }
     },
     {
         name: 'Sports',
-        words: ['Football', 'Basketball', 'Volleyball', 'Tennis', 'Swimming', 'Running', 'Cycling', 'Boxing', 'Wrestling', 'Skiing', 'Golf', 'Baseball', 'Hockey', 'Badminton', 'Table Tennis']
+        words: {
+            en: ['Football', 'Basketball', 'Volleyball', 'Tennis', 'Swimming', 'Running', 'Cycling', 'Boxing', 'Wrestling', 'Skiing', 'Golf', 'Baseball', 'Hockey', 'Badminton', 'Table Tennis', 'Rugby', 'Cricket', 'Surfing', 'Skateboarding', 'Karate', 'Judo', 'Taekwondo', 'Fencing', 'Archery', 'Rowing', 'Sailing', 'Climbing', 'Diving', 'Bowling', 'Darts', 'Yoga', 'Pilates', 'Gymnastics', 'Figure Skating', 'Chess', 'Poker', 'Formula 1', 'MotoGP', 'Horse Racing', 'Billiards', 'Lacrosse', 'Handball', 'Water Polo', 'Triathlon', 'Marathon'],
+            tr: ['Futbol', 'Basketbol', 'Voleybol', 'Tenis', 'Yüzme', 'Koşu', 'Bisiklet', 'Boks', 'Güreş', 'Kayak', 'Golf', 'Beyzbol', 'Hokey', 'Badminton', 'Masa Tenisi', 'Ragbi', 'Kriket', 'Sörf', 'Kaykay', 'Karate', 'Judo', 'Tekvando', 'Eskrim', 'Okçuluk', 'Kürek', 'Yelken', 'Tırmanış', 'Dalış', 'Bovling', 'Dart', 'Yoga', 'Pilates', 'Jimnastik', 'Artistik Buz Pateni', 'Satranç', 'Poker', 'Formula 1', 'MotoGP', 'At Yarışı', 'Bilardo', 'Lakros', 'Hentbol', 'Sutopu', 'Triatlon', 'Maraton']
+        }
     },
     {
         name: 'Movies',
-        words: ['Titanic', 'Avatar', 'Matrix', 'Star Wars', 'Harry Potter', 'Lord of the Rings', 'Inception', 'Gladiator', 'Forrest Gump', 'Joker', 'Batman', 'Spiderman', 'Frozen', 'Shrek', 'Toy Story']
+        words: ['Titanic', 'Avatar', 'Matrix', 'Star Wars', 'Harry Potter', 'Lord of the Rings', 'Inception', 'Gladiator', 'Forrest Gump', 'Joker', 'Batman', 'Spiderman', 'Frozen', 'Shrek', 'Toy Story', 'Interstellar', 'The Godfather', 'Pulp Fiction', 'The Dark Knight', 'Fight Club', 'Se7en', 'Sherlock Holmes', 'Iron Man', 'Avengers', 'Thor', 'Black Panther', 'Wonder Woman', 'Deadpool', 'Pirates of the Caribbean', 'Jurassic Park', 'King Kong', 'Godzilla', 'The Lion King', 'Aladdin', 'Finding Nemo', 'Up', 'Ratatouille', 'Cars', 'Monsters Inc', 'Inside Out', 'Coco', 'Soul', 'Minions', 'Despicable Me', 'Ice Age']
+    },
+    {
+        name: 'Super Heroes',
+        words: ['Superman', 'Batman', 'Spider-Man', 'Iron Man', 'Captain America', 'Thor', 'Hulk', 'Wonder Woman', 'Aquaman', 'Flash', 'Green Lantern', 'Wolverine', 'Deadpool', 'Black Panther', 'Doctor Strange', 'Ant-Man', 'Black Widow', 'Hawkeye', 'Vision', 'Scarlet Witch', 'Falcon', 'War Machine', 'Star-Lord', 'Gamora', 'Groot', 'Rocket', 'Drax', 'Thanos', 'Loki', 'Venom', 'Catwoman', 'Joker', 'Harley Quinn', 'Bane', 'Penguin', 'Two-Face', 'Riddler', 'Poison Ivy', 'Scarecrow', 'Magneto', 'Professor X', 'Cyclops', 'Storm', 'Rogue', 'Nightcrawler']
+    },
+    {
+        name: 'Instruments',
+        words: {
+            en: ['Guitar', 'Piano', 'Violin', 'Drums', 'Flute', 'Trumpet', 'Saxophone', 'Cello', 'Harp', 'Accordion', 'Harmonica', 'Clarinet', 'Oboe', 'Trombone', 'Tuba', 'Banjo', 'Mandolin', 'Ukulele', 'Sitar', 'Bagpipes', 'Didgeridoo', 'Xylophone', 'Cymbals', 'Tambourine', 'Triangle', 'Synthesizer', 'Electric Guitar', 'Bass Guitar', 'Recorder', 'Viola', 'Double Bass', 'Bassoon', 'Cornet', 'French Horn', 'Lute', 'Lyre', 'Organ', 'Steel Drum', 'Djembe', 'Bongo', 'Conga', 'Marimba', 'Vibraphone', 'Glockenspiel'],
+            tr: ['Gitar', 'Piyano', 'Keman', 'Davul', 'Flüt', 'Trompet', 'Saksafon', 'Viyolonsel', 'Arp', 'Akordeon', 'Mızıka', 'Klarnet', 'Obua', 'Trombon', 'Tuba', 'Banjo', 'Mandolin', 'Ukulele', 'Sitar', 'Gayda', 'Didjeridu', 'Ksilofon', 'Zil', 'Tef', 'Üçgen', 'Synthesizer', 'Elektro Gitar', 'Bas Gitar', 'Blok Flüt', 'Viyola', 'Kontrbas', 'Fagot', 'Kornet', 'Korno', 'Ud', 'Lir', 'Org', 'Çelik Davul', 'Djembe', 'Bongo', 'Konga', 'Marimba', 'Vibrafon', 'Çan']
+        }
     },
     {
         name: 'Clash Royale',
-        words: [
-            'Knight', 'Archers', 'Goblins', 'Giant', 'P.E.K.K.A', 'Minions', 'Balloon', 'Witch', 'Barbarians', 'Golem', 'Skeletons', 'Valkyrie', 'Skeleton Army', 'Bomber', 'Musketeer', 'Baby Dragon', 'Prince', 'Wizard', 'Mini P.E.K.K.A', 'Spear Goblins', 'Giant Skeleton', 'Hog Rider', 'Minion Horde', 'Ice Wizard', 'Royal Giant', 'Guards', 'Princess', 'Dark Prince', 'Three Musketeers', 'Lava Hound', 'Ice Spirit', 'Fire Spirit', 'Miner', 'Sparky', 'Bowler', 'Lumberjack', 'Battle Ram', 'Inferno Dragon', 'Ice Golem', 'Mega Minion', 'Dart Goblin', 'Goblin Gang', 'Electro Wizard', 'Elite Barbarians', 'Hunter', 'Executioner', 'Bandit', 'Royal Recruits', 'Night Witch', 'Bats', 'Royal Ghost', 'Ram Rider', 'Zappies', 'Rascals', 'Cannon Cart', 'Mega Knight', 'Skeleton Barrel', 'Flying Machine', 'Wall Breakers', 'Royal Hogs', 'Goblin Giant', 'Fisherman', 'Magic Archer', 'Electro Dragon', 'Firecracker', 'Mighty Miner', 'Elixir Golem', 'Goblin Barrel', 'Freeze', 'Mirror', 'Lightning', 'Zap', 'Poison', 'Graveyard', 'The Log', 'Tornado', 'Clone', 'Earthquake', 'Barbarian Barrel', 'Heal Spirit', 'Giant Snowball', 'Royal Delivery', 'Vines', 'Goblin Curse', 'Spirit Empress'
-        ]
+        words: {
+            en: ['Knight', 'Archers', 'Goblins', 'Giant', 'P.E.K.K.A', 'Minions', 'Balloon', 'Witch', 'Barbarians', 'Golem', 'Skeletons', 'Valkyrie', 'Skeleton Army', 'Bomber', 'Musketeer', 'Baby Dragon', 'Prince', 'Wizard', 'Mini P.E.K.K.A', 'Spear Goblins', 'Giant Skeleton', 'Hog Rider', 'Minion Horde', 'Ice Wizard', 'Royal Giant', 'Guards', 'Princess', 'Dark Prince', 'Three Musketeers', 'Lava Hound', 'Ice Spirit', 'Fire Spirit', 'Miner', 'Sparky', 'Bowler', 'Lumberjack', 'Battle Ram', 'Inferno Dragon', 'Ice Golem', 'Mega Minion', 'Dart Goblin', 'Goblin Gang', 'Electro Wizard', 'Elite Barbarians', 'Hunter'],
+            tr: ['Şövalye', 'Okçular', 'Goblinler', 'Dev', 'P.E.K.K.A', 'Minyonlar', 'Balon', 'Cadı', 'Barbarlar', 'Golem', 'İskeletler', 'Valkür', 'İskelet Ordusu', 'Bombacı', 'Silahşör', 'Bebek Ejderha', 'Prens', 'Büyücü', 'Mini P.E.K.K.A', 'Mızraklı Goblinler', 'Dev İskelet', 'Domuz Binicisi', 'Minyon Sürüsü', 'Buz Büyücüsü', 'Kraliyet Devi', 'Muhafızlar', 'Prenses', 'Kara Prens', 'Üç Silahşör', 'Lav Tazısı', 'Buz Ruhu', 'Ateş Ruhu', 'Madenci', 'Kıvılcım', 'Atıcı', 'Oduncu', 'Koç Başı', 'Cehennem Ejderhası', 'Buz Golemi', 'Mega Minyon', 'Dart Goblini', 'Goblin Çetesi', 'Elektro Büyücü', 'Elit Barbarlar', 'Avcı']
+        }
     },
     {
         name: 'Anime',
-        words: [
-            'Naruto', 'One Piece', 'Dragon Ball', 'Attack on Titan', 'Death Note', 'Bleach', 'Fullmetal Alchemist', 'Demon Slayer', 'Jujutsu Kaisen', 'One Punch Man', 'Pokemon', 'Sword Art Online', 'Tokyo Ghoul', 'Hunter x Hunter', 'My Hero Academia',
-            'Steins;Gate', 'Code Geass', 'Cowboy Bebop', 'Neon Genesis Evangelion', 'JoJo\'s Bizarre Adventure', 'Gintama', 'Mob Psycho 100', 'Haikyuu!!', 'Kuroko no Basket', 'Fairy Tail', 'Black Clover', 'Dr. Stone', 'Fire Force', 'Soul Eater', 'Blue Exorcist',
-            'Psycho-Pass', 'Parasyte', 'Seven Deadly Sins', 'Overlord', 'Konosuba', 'Re:Zero', 'Violet Evergarden', 'Vinland Saga', 'Chainsaw Man', 'Spy x Family', 'Blue Lock', 'Oshi no Ko', 'Frieren', 'Mashle', 'Hell\'s Paradise', 'Bungou Stray Dogs',
-            'Classroom of the Elite', 'Darling in the FranXX', 'Akame ga Kill!', 'No Game No Life', 'Mirai Nikki', 'Elfen Lied', 'Another', 'Hellsing', 'Berserk', 'The Disastrous Life of Saiki K.', 'Kaguya-sama: Love is War', 'Erased', 'Your Lie in April',
-            'Toradora!', 'Angel Beats!', 'Clannad', 'Anohana', 'A Silent Voice', 'Your Name', 'Spirited Away', 'Princess Mononoke', 'Howl\'s Moving Castle', 'Cyberpunk: Edgerunners', 'Arcane', 'Castlevania', 'Sailor Moon', 'Digimon', 'Yu-Gi-Oh!', 'Beyblade',
-            'Assassination Classroom', 'Noragami', 'Seraph of the End', 'Charlotte', 'Plastic Memories', 'Made in Abyss', 'The Promised Neverland', 'Great Teacher Onizuka', 'Hajime no Ippo', 'Slam Dunk', 'Initial D', 'Monster', 'Mushishi', 'Natsume Yuujinchou'
-        ]
+        words: ["Frieren: Beyond Journey's End", 'Chainsaw Man', 'Fullmetal Alchemist', 'Steins;Gate', 'Attack on Titan', 'Gintama', 'Hunter x Hunter', 'Bleach', 'Kaguya-sama', 'Fruits Basket', 'Clannad', 'A Silent Voice', 'The Apothecary Diaries', 'Code Geass', 'March Comes in Like a Lion', 'Monster', 'Naruto', 'One Piece', 'Dragon Ball', 'Death Note', 'Demon Slayer', 'Jujutsu Kaisen', 'One Punch Man', 'Pokemon', 'Sword Art Online', 'Tokyo Ghoul', 'My Hero Academia', 'Cowboy Bebop', 'Neon Genesis Evangelion', 'JoJo', 'Mob Psycho 100', 'Haikyuu', "Kuroko's Basketball", 'Black Clover', 'Dr. Stone', 'Fire Force', 'Parasyte', 'Seven Deadly Sins', 'Overlord', 'Konosuba', 'Re:Zero', 'Violet Evergarden', 'Vinland Saga', 'Spy x Family', 'Blue Lock', 'Oshi no Ko', 'Solo Leveling', 'Dandadan', 'Welcome to the NHK', 'Bunny Girl Senpai', 'Your Name', 'Grand Blue Dreaming', 'Your Lie in April', 'Food Wars', 'Mushoku Tensei']
     }
 ];
 

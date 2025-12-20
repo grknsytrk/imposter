@@ -13,7 +13,7 @@ interface ClientGameState {
     turnTimeLeft: number;
     phaseTimeLeft: number;
     roundNumber: number;
-    hints: Record<string, string>;
+    hints: Record<string, string[]>;
     votes: Record<string, string>;
     eliminatedPlayerId?: string;
     winner?: 'CITIZENS' | 'IMPOSTER';

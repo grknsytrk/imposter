@@ -1,0 +1,82 @@
+{
+    "roles": {
+        "citizen": "Citizen",
+        "imposter": "Imposter"
+    },
+    "phases": {
+        "lobby": "Lobby",
+        "roleReveal": "Role Reveal",
+        "hintRound": "Hint Round",
+        "discussion": "Discussion",
+        "voting": "Voting",
+        "voteResult": "Vote Result",
+        "gameOver": "Game Over"
+    },
+    "room": {
+        "arena": "Room",
+        "players": "Players",
+        "code": "Code",
+        "category": "Category",
+        "word": "Word",
+        "unknown": "Unknown",
+        "ready": "Ready",
+        "open": "Open",
+        "playing": "Playing",
+        "locked": "Room Locked"
+    },
+    "hints": {
+        "typeHint": "Type your hint...",
+        "submit": "Submit"
+    },
+    "voting": {
+        "voteNow": "Vote Now",
+        "voted": "Voted",
+        "tapToSelect": "Tap a player to select",
+        "voteBreakdown": "Vote Breakdown",
+        "checkTable": "Check the table for details"
+    },
+    "results": {
+        "eliminated": "Eliminated",
+        "noOneEliminated": "No One Eliminated",
+        "citizensWin": "Citizens",
+        "imposterWins": "Imposter",
+        "won": "Won!",
+        "playAgain": "Play Again"
+    },
+    "messages": {
+        "needMorePlayers": "Need {{count}} more player",
+        "needMorePlayers_other": "Need {{count}} more players",
+        "ready": "Ready!",
+        "waitingForHost": "Waiting for host...",
+        "yourTurn": "Your Turn",
+        "waiting": "Waiting...",
+        "discuss": "Discuss!"
+    },
+    "rules": {
+        "title": "How to Play",
+        "theGame": "The Game",
+        "gameDesc": "Among Lies is a social deduction game where one player is secretly the <imposter>Imposter</imposter> while others are <citizen>Citizens</citizen>. The Citizens know a secret word, but the Imposter doesn't!",
+        "hintRound": "Hint Round",
+        "hintRules": [
+            "Each player gives a <bold>one-word hint</bold> related to the secret word",
+            "Citizens: Give hints that prove you know the word, but don't make it too obvious!",
+            "Imposter: Bluff! Try to give a believable hint without knowing the word"
+        ],
+        "discussion": "Discussion",
+        "discussionDesc": "After hints, discuss who you think the Imposter is. Analyze the hints - whose hint seems suspicious or vague?",
+        "voting": "Voting",
+        "votingRules": [
+            "Vote for who you think is the Imposter",
+            "The player with the most votes is eliminated",
+            "If the Imposter is caught, <citizen>Citizens win!</citizen>",
+            "If a Citizen is eliminated, <imposter>Imposter wins!</imposter>"
+        ],
+        "tips": "Tips",
+        "tipsList": [
+            "Pay attention to who hesitates or gives generic hints",
+            "As an Imposter, listen carefully to others' hints for clues",
+            "Don't give hints that are too obvious - it might help the Imposter!"
+        ],
+        "gotIt": "Got It!"
+    }
+}

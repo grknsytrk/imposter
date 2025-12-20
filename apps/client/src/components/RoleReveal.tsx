@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Fingerprint, User, Skull } from 'lucide-react';
+import { useGameSound } from '../hooks/useGameSound';
 
 interface RoleRevealProps {
     role: 'IMPOSTER' | 'CITIZEN';
@@ -10,8 +11,12 @@ interface RoleRevealProps {
 
 export const RoleReveal: React.FC<RoleRevealProps> = ({ role, word, category }) => {
     const [showShhh, setShowShhh] = useState(true);
+    const { playTone } = useGameSound();
 
     useEffect(() => {
+        // Play SHHH sound
+        playTone('shush');
+
         // "SHHH" animation for the first 1.5 seconds
         const timer = setTimeout(() => {
             setShowShhh(false);

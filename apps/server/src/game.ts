@@ -56,7 +56,12 @@ export class GameLogic {
         } else {
             category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
         }
-        const word = category.words[Math.floor(Math.random() * category.words.length)];
+
+        // Kelime listesini al (bilingual ise TR kullan, değilse direkt kullan)
+        const wordList = Array.isArray(category.words)
+            ? category.words
+            : (category.words.tr || category.words.en);
+        const word = wordList[Math.floor(Math.random() * wordList.length)];
 
         // Rastgele imposter seç
         const imposterIndex = Math.floor(Math.random() * room.players.length);
@@ -198,8 +203,9 @@ export class GameLogic {
             return player && !player.isEliminated;
         });
 
-        // Bu roundda herkes ipucu verdiyse
-        const allHintsGiven = activePlayers.every(id => room.gameState!.hints[id]);
+        // Bu roundda herkes ipucu verdiyse (roundNumber'a göre kontrol)
+        const expectedHintCount = room.gameState!.roundNumber;
+        const allHintsGiven = activePlayers.every(id => (room.gameState!.hints[id]?.length || 0) >= expectedHintCount);
 
         if (allHintsGiven) {
             // Son hint'i göstermek için 3 saniye bekle
@@ -214,10 +220,9 @@ export class GameLogic {
                 () => {
                     const currentHintRound = room.gameState!.roundNumber;
                     if (currentHintRound < GAME_CONFIG.HINT_ROUNDS) {
-                        // Sonraki hint round'a geç
                         room.gameState!.roundNumber++;
                         room.gameState!.currentTurnIndex = 0;
-                        room.gameState!.hints = {}; // Hint'leri temizle
+                        // Hint'leri silme - tüm roundlar boyunca tut
                         room.players.forEach(p => p.hint = undefined);
                         this.startHintTurn(room);
                     } else {
@@ -229,11 +234,12 @@ export class GameLogic {
             return;
         }
 
-        // Sıradaki ipucu vermemiş oyuncuyu bul
+        // Sıradaki ipucu vermemiş oyuncuyu bul (bu round için)
+        const requiredHints = room.gameState.roundNumber;
         let currentIndex = room.gameState.currentTurnIndex;
         while (currentIndex < activePlayers.length) {
             const playerId = activePlayers[currentIndex];
-            if (!room.gameState.hints[playerId]) {
+            if ((room.gameState.hints[playerId]?.length || 0) < requiredHints) {
                 break;
             }
             currentIndex++;
@@ -257,7 +263,10 @@ export class GameLogic {
                 // Süre bitti, boş ipucu kaydet ve sıradakine geç
                 const currentPlayerId = activePlayers[room.gameState!.currentTurnIndex];
                 if (!room.gameState!.hints[currentPlayerId]) {
-                    room.gameState!.hints[currentPlayerId] = '(Timed out)';
+                    room.gameState!.hints[currentPlayerId] = [];
+                }
+                if (room.gameState!.hints[currentPlayerId].length < room.gameState!.roundNumber) {
+                    room.gameState!.hints[currentPlayerId].push('(Timed out)');
                 }
                 room.gameState!.currentTurnIndex++;
                 this.startHintTurn(room);
@@ -548,9 +557,12 @@ export class GameLogic {
                 return;
             }
 
-            // İpucuyu kaydet
-            const cleanHint = hint.trim().substring(0, 50);
-            room.gameState.hints[socket.id] = cleanHint || '(Empty)';
+            // İpucuyu kaydet (diziye ekle)
+            const cleanHint = hint.trim().substring(0, 50) || '(Empty)';
+            if (!room.gameState.hints[socket.id]) {
+                room.gameState.hints[socket.id] = [];
+            }
+            room.gameState.hints[socket.id].push(cleanHint);
             player.hint = cleanHint;
 
             // Sıradaki oyuncuya geç

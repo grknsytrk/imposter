@@ -26,7 +26,7 @@ export type GameState = {
     votes: Record<string, string>;
     eliminatedPlayerId?: string;
     winner?: 'CITIZENS' | 'IMPOSTER';
-    hints: Record<string, string>;
+    hints: Record<string, string[]>;
 };
 export type Room = {
     id: string;
@@ -49,7 +49,10 @@ export type ChatMessage = {
 };
 export type Category = {
     name: string;
-    words: string[];
+    words: string[] | {
+        en: string[];
+        tr: string[];
+    };
 };
 export declare const CATEGORIES: Category[];
 export declare const GAME_CONFIG: {
