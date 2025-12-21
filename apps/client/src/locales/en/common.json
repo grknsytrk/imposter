@@ -23,7 +23,9 @@
         "send": "Send",
         "unlock": "Unlock",
         "playAsGuest": "Play as Guest",
-        "continueAsGuest": "Quick Play"
+        "continueAsGuest": "Quick Play",
+        "understand": "I Understand",
+        "gotIt": "Got It"
     },
     "nav": {
         "rules": "Rules",
@@ -43,7 +45,35 @@
         "or": "or",
         "termsPrefix": "By continuing, you agree to our",
         "termsLink": "Terms of Service",
-        "termsSuffix": ""
+        "termsSuffix": "",
+        "terms": {
+            "title": "Terms of Service",
+            "welcome": "Welcome to Among Lies!",
+            "welcomeText": "By accessing and playing Among Lies, you agree to be bound by these Terms of Service. Please read them carefully before using our platform.",
+            "fairPlay": "Fair Play & Conduct",
+            "fairPlayList": [
+                "Be respectful to other players at all times",
+                "No harassment, hate speech, or discriminatory behavior",
+                "No cheating or exploiting game mechanics",
+                "Keep chat friendly and appropriate for all ages"
+            ],
+            "account": "Your Account",
+            "accountList": [
+                "You are responsible for maintaining account security",
+                "One account per person is allowed",
+                "We may suspend accounts violating these terms"
+            ],
+            "disclaimer": "Disclaimer",
+            "disclaimerText": "Among Lies is provided \"as is\" without warranties. We reserve the right to modify or discontinue the service at any time. Game data may be reset during updates.",
+            "lastUpdated": "Last updated: December 2025"
+        },
+        "forgot": {
+            "title": "Reset Password",
+            "description": "Enter your email or username and we'll send you a link to reset your password.",
+            "sendLink": "Send Reset Link",
+            "sending": "Sending...",
+            "success": "Check your email for a password reset link!"
+        }
     },
     "matchmaking": {
         "title": "Matchmaking",

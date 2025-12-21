@@ -357,7 +357,7 @@ export function AuthPage() {
                                     <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
                                         <Shield className="w-5 h-5 text-primary" />
                                     </div>
-                                    <h2 className="text-xl font-heading font-black text-card-foreground uppercase">Terms of Service</h2>
+                                    <h2 className="text-xl font-heading font-black text-card-foreground uppercase">{t('auth.terms.title')}</h2>
                                 </div>
                                 <button
                                     onClick={() => setIsTermsOpen(false)}
@@ -372,53 +372,50 @@ export function AuthPage() {
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <Gamepad2 className="w-5 h-5 text-primary" />
-                                        <h3 className="font-bold text-lg text-card-foreground">Welcome to Among Lies!</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">{t('auth.terms.welcome')}</h3>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                                        By accessing and playing Among Lies, you agree to be bound by these Terms of Service.
-                                        Please read them carefully before using our platform.
+                                        {t('auth.terms.welcomeText')}
                                     </p>
                                 </section>
 
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <MessageSquare className="w-5 h-5 text-emerald-500" />
-                                        <h3 className="font-bold text-lg text-card-foreground">Fair Play & Conduct</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">{t('auth.terms.fairPlay')}</h3>
                                     </div>
                                     <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-2 list-disc list-inside">
-                                        <li>Be respectful to other players at all times</li>
-                                        <li>No harassment, hate speech, or discriminatory behavior</li>
-                                        <li>No cheating or exploiting game mechanics</li>
-                                        <li>Keep chat friendly and appropriate for all ages</li>
+                                        {(t('auth.terms.fairPlayList', { returnObjects: true }) as string[]).map((item, i) => (
+                                            <li key={i}>{item}</li>
+                                        ))}
                                     </ul>
                                 </section>
 
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <Shield className="w-5 h-5 text-blue-500" />
-                                        <h3 className="font-bold text-lg text-card-foreground">Your Account</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">{t('auth.terms.account')}</h3>
                                     </div>
                                     <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-2 list-disc list-inside">
-                                        <li>You are responsible for maintaining account security</li>
-                                        <li>One account per person is allowed</li>
-                                        <li>We may suspend accounts violating these terms</li>
+                                        {(t('auth.terms.accountList', { returnObjects: true }) as string[]).map((item, i) => (
+                                            <li key={i}>{item}</li>
+                                        ))}
                                     </ul>
                                 </section>
 
                                 <section>
                                     <div className="flex items-center gap-2 mb-2">
                                         <AlertTriangle className="w-5 h-5 text-amber-500" />
-                                        <h3 className="font-bold text-lg text-card-foreground">Disclaimer</h3>
+                                        <h3 className="font-bold text-lg text-card-foreground">{t('auth.terms.disclaimer')}</h3>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                                        Among Lies is provided "as is" without warranties. We reserve the right to modify
-                                        or discontinue the service at any time. Game data may be reset during updates.
+                                        {t('auth.terms.disclaimerText')}
                                     </p>
                                 </section>
 
                                 <div className="pt-4 border-t border-border">
                                     <p className="text-xs text-muted-foreground text-center">
-                                        Last updated: December 2025
+                                        {t('auth.terms.lastUpdated')}
                                     </p>
                                 </div>
                             </div>
@@ -429,7 +426,7 @@ export function AuthPage() {
                                     onClick={() => setIsTermsOpen(false)}
                                     className="w-full h-12 font-heading font-black uppercase tracking-wider"
                                 >
-                                    I Understand
+                                    {t('buttons.understand')}
                                 </Button>
                             </div>
                         </motion.div>
@@ -460,7 +457,7 @@ export function AuthPage() {
                                     <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
                                         <KeyRound className="w-5 h-5 text-primary" />
                                     </div>
-                                    <h2 className="text-xl font-heading font-black text-card-foreground uppercase">Reset Password</h2>
+                                    <h2 className="text-xl font-heading font-black text-card-foreground uppercase">{t('auth.forgot.title')}</h2>
                                 </div>
                                 <button
                                     onClick={() => setIsForgotOpen(false)}
@@ -497,7 +494,7 @@ export function AuthPage() {
                             {!forgotMessage ? (
                                 <>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                                        Enter your email or username and we'll send you a link to reset your password.
+                                        {t('auth.forgot.description')}
                                     </p>
 
                                     <form
@@ -511,7 +508,7 @@ export function AuthPage() {
                                             if (error) {
                                                 setForgotError(formatErrorMessage(error.message));
                                             } else {
-                                                setForgotMessage('Check your email for a password reset link!');
+                                                setForgotMessage(t('auth.forgot.success'));
                                             }
 
                                             setForgotLoading(false);
@@ -524,7 +521,7 @@ export function AuthPage() {
                                                 type="text"
                                                 value={forgotEmail}
                                                 onChange={(e) => setForgotEmail(e.target.value)}
-                                                placeholder="Email or Username"
+                                                placeholder={t('auth.emailOrUsername')}
                                                 required
                                                 className="premium-input w-full h-14"
                                                 style={{ paddingLeft: '48px' }}
@@ -536,7 +533,7 @@ export function AuthPage() {
                                             disabled={forgotLoading}
                                             className="w-full h-12 font-heading font-black uppercase tracking-wider"
                                         >
-                                            {forgotLoading ? 'Sending...' : 'Send Reset Link'}
+                                            {forgotLoading ? t('auth.forgot.sending') : t('auth.forgot.sendLink')}
                                         </Button>
                                     </form>
                                 </>
@@ -545,7 +542,7 @@ export function AuthPage() {
                                     onClick={() => setIsForgotOpen(false)}
                                     className="w-full h-12 font-heading font-black uppercase tracking-wider"
                                 >
-                                    Got It
+                                    {t('buttons.gotIt')}
                                 </Button>
                             )}
                         </motion.div>

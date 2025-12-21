@@ -23,7 +23,9 @@
         "send": "Gönder",
         "unlock": "Kilidi Aç",
         "playAsGuest": "Misafir Olarak Oyna",
-        "continueAsGuest": "Hızlı Oyna"
+        "continueAsGuest": "Hızlı Oyna",
+        "understand": "Anladım",
+        "gotIt": "Tamam"
     },
     "nav": {
         "rules": "Kurallar",
@@ -41,9 +43,37 @@
         "forgotPassword": "Şifrenizi mi unuttunuz?",
         "continueGoogle": "Google ile Devam Et",
         "or": "veya",
-        "termsPrefix": "Devam ederek",
+        "termsPrefix": "Devam ederek,",
         "termsLink": "Kullanım Şartlarını",
-        "termsSuffix": "kabul etmiş olursunuz"
+        "termsSuffix": "kabul etmiş olursunuz",
+        "terms": {
+            "title": "Kullanım Şartları",
+            "welcome": "Among Lies'a Hoş Geldiniz!",
+            "welcomeText": "Among Lies'a erişerek ve oynayarak, bu Kullanım Şartları'na bağlı kalmayı kabul etmiş olursunuz. Lütfen platformumuzu kullanmadan önce bunları dikkatlice okuyun.",
+            "fairPlay": "Adil Oyun ve Davranış",
+            "fairPlayList": [
+                "Diğer oyunculara her zaman saygılı olun",
+                "Taciz, nefret söylemi veya ayrımcı davranış yasaktır",
+                "Hile yapmak veya oyun mekaniklerini suistimal etmek yasaktır",
+                "Sohbeti her yaşa uygun ve arkadaşça tutun"
+            ],
+            "account": "Hesabınız",
+            "accountList": [
+                "Hesap güvenliğini sağlamaktan siz sorumlusunuz",
+                "Kişi başına sadece bir hesaba izin verilir",
+                "Şartları ihlal eden hesapları askıya alabiliriz"
+            ],
+            "disclaimer": "Sorumluluk Reddi",
+            "disclaimerText": "Among Lies \"olduğu gibi\" sunulmaktadır. Hizmeti istediğimiz zaman değiştirme veya durdurma hakkımızı saklı tutarız. Güncellemeler sırasında oyun verileri sıfırlanabilir.",
+            "lastUpdated": "Son güncelleme: Aralık 2025"
+        },
+        "forgot": {
+            "title": "Şifreyi Sıfırla",
+            "description": "E-posta adresinizi veya kullanıcı adınızı girin, size şifrenizi sıfırlamanız için bir bağlantı gönderelim.",
+            "sendLink": "Sıfırlama Bağlantısı Gönder",
+            "sending": "Gönderiliyor...",
+            "success": "Şifre sıfırlama bağlantısı için e-postanızı kontrol edin!"
+        }
     },
     "matchmaking": {
         "title": "Eşleşme",
