@@ -40,12 +40,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     initialize: async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        set({ session, user: session?.user ?? null, loading: false });
 
-        // Profile'ı da yükle
-        if (session?.user) {
-            const profile = await get().fetchProfile();
-            set({ profile });
+        // Check if guest has intentionally logged out - don't auto-login
+        const wasGuestLoggedOut = localStorage.getItem('guest_logged_out') === 'true';
+
+        if (session?.user && wasGuestLoggedOut && session.user.is_anonymous) {
+            // Guest logged out - don't auto-login, show login page
+            set({ session: null, user: null, profile: null, loading: false });
+        } else {
+            set({ session, user: session?.user ?? null, loading: false });
+
+            // Profile'ı da yükle
+            if (session?.user) {
+                const profile = await get().fetchProfile();
+                set({ profile });
+            }
         }
 
         supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -197,6 +206,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // For anonymous users, DON'T clear Supabase session - keep it so they can rejoin with same account
         // Only clear local state so they go back to login page, but session persists in localStorage
         if (user?.is_anonymous) {
+            // Set flag to prevent auto-login on page reload
+            localStorage.setItem('guest_logged_out', 'true');
             // Just clear local state, don't call supabase.auth.signOut()
             set({ user: null, session: null, profile: null });
         } else {
@@ -245,6 +256,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             const { data: { session: existingSession } } = await supabase.auth.getSession();
 
             if (existingSession?.user?.is_anonymous) {
+                // Clear the logout flag - user is logging back in
+                localStorage.removeItem('guest_logged_out');
                 // Reuse existing anonymous session - just fetch profile
                 const profile = await get().fetchProfile();
                 set({
