@@ -34,7 +34,9 @@ export function LanguageSwitcher() {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
+    // Use only base language code (e.g., 'tr' from 'tr-TR') for comparison
+    const baseLangCode = i18n.language?.substring(0, 2) || 'en';
+    const currentLang = LANGUAGES.find(l => l.code === baseLangCode) || LANGUAGES[0];
 
     const handleLanguageChange = (langCode: SupportedLanguage) => {
         i18n.changeLanguage(langCode);

@@ -30,6 +30,21 @@
         "profile": "Profile",
         "logout": "Logout"
     },
+    "auth": {
+        "login": "Login",
+        "signUp": "Sign Up",
+        "emailOrUsername": "Email or Username",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "username": "Username",
+        "forgotPassword": "Forgot your password?",
+        "continueGoogle": "Continue with Google",
+        "or": "or",
+        "termsPrefix": "By continuing, you agree to our",
+        "termsLink": "Terms of Service",
+        "termsSuffix": ""
+    },
     "matchmaking": {
         "title": "Matchmaking",
         "hostGame": "Host Game",

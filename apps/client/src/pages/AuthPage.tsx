@@ -146,7 +146,7 @@ export function AuthPage() {
                                 }`}
                         >
                             <LogIn className="w-4 h-4 inline mr-2" />
-                            Login
+                            {t('auth.login')}
                         </button>
                         <button
                             onClick={() => setIsLogin(false)}
@@ -156,7 +156,7 @@ export function AuthPage() {
                                 }`}
                         >
                             <UserPlus className="w-4 h-4 inline mr-2" />
-                            Sign Up
+                            {t('auth.signUp')}
                         </button>
                     </div>
 
@@ -194,7 +194,7 @@ export function AuthPage() {
                                             type="text"
                                             value={emailOrUsername}
                                             onChange={(e) => setEmailOrUsername(e.target.value)}
-                                            placeholder="Email or Username"
+                                            placeholder={t('auth.emailOrUsername')}
                                             required
                                             className="premium-input w-full h-14"
                                             style={{ paddingLeft: '48px' }}
@@ -209,7 +209,7 @@ export function AuthPage() {
                                                 type="text"
                                                 value={username}
                                                 onChange={(e) => setUsername(e.target.value)}
-                                                placeholder="Choose a Username"
+                                                placeholder={t('auth.username')}
                                                 required
                                                 minLength={3}
                                                 className="premium-input w-full h-14"
@@ -223,7 +223,7 @@ export function AuthPage() {
                                                 type="email"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
-                                                placeholder="Email Address"
+                                                placeholder={t('auth.email')}
                                                 required
                                                 className="premium-input w-full h-14"
                                                 style={{ paddingLeft: '48px' }}
@@ -238,7 +238,7 @@ export function AuthPage() {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="Password"
+                                        placeholder={t('auth.password')}
                                         required
                                         minLength={6}
                                         className="premium-input w-full h-14"
@@ -251,7 +251,7 @@ export function AuthPage() {
                                     disabled={loading}
                                     className="w-full h-14 text-lg font-heading font-black uppercase tracking-wider"
                                 >
-                                    {loading ? 'Please wait...' : isLogin ? 'Login' : 'Create Account'}
+                                    {loading ? '...' : isLogin ? t('auth.login') : t('auth.signUp')}
                                 </Button>
 
                                 {/* Forgot Password Link - Only show on Login */}
@@ -266,7 +266,7 @@ export function AuthPage() {
                                         }}
                                         className="w-full text-center text-sm text-muted-foreground hover:text-primary font-bold transition-colors mt-2"
                                     >
-                                        Forgot your password?
+                                        {t('auth.forgotPassword')}
                                     </button>
                                 )}
                             </motion.div>
@@ -276,7 +276,7 @@ export function AuthPage() {
                     {/* Divider */}
                     <div className="flex items-center gap-4 my-6">
                         <div className="flex-1 h-px bg-border" />
-                        <span className="text-muted-foreground text-xs font-bold uppercase">or</span>
+                        <span className="text-muted-foreground text-xs font-bold uppercase">{t('auth.or')}</span>
                         <div className="flex-1 h-px bg-border" />
                     </div>
 
@@ -317,19 +317,20 @@ export function AuthPage() {
                                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                             />
                         </svg>
-                        Continue with Google
+                        {t('auth.continueGoogle')}
                     </Button>
                 </motion.div>
 
                 {/* Footer */}
                 <p className="text-center text-white/50 text-sm mt-6 font-bold">
-                    By continuing, you agree to our{' '}
+                    {t('auth.termsPrefix')}{' '}
                     <button
                         onClick={() => setIsTermsOpen(true)}
                         className="text-primary hover:text-primary/80 underline transition-colors"
                     >
-                        Terms of Service
+                        {t('auth.termsLink')}
                     </button>
+                    {t('auth.termsSuffix') && ` ${t('auth.termsSuffix')}`}
                 </p>
             </motion.div>
 

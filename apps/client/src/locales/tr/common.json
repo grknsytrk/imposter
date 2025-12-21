@@ -30,6 +30,21 @@
         "profile": "Profil",
         "logout": "Çıkış"
     },
+    "auth": {
+        "login": "Giriş",
+        "signUp": "Kayıt Ol",
+        "emailOrUsername": "E-posta veya Kullanıcı Adı",
+        "email": "E-posta",
+        "password": "Şifre",
+        "confirmPassword": "Şifre Tekrar",
+        "username": "Kullanıcı Adı",
+        "forgotPassword": "Şifrenizi mi unuttunuz?",
+        "continueGoogle": "Google ile Devam Et",
+        "or": "veya",
+        "termsPrefix": "Devam ederek",
+        "termsLink": "Kullanım Şartlarını",
+        "termsSuffix": "kabul etmiş olursunuz"
+    },
     "matchmaking": {
         "title": "Eşleşme",
         "hostGame": "Oyun Kur",
