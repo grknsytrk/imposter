@@ -219,19 +219,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     signInAnonymously: async () => {
-        // Random guest name generator
+        // Random guest name generator: <adjective><name><4-digit number>
         const adjectives = [
             'Sneaky', 'Clever', 'Mysterious', 'Shadow', 'Swift', 'Silent', 'Brave', 'Lucky', 'Crafty', 'Sly',
-            'Gizli', 'Şüpheli', 'Hızlı', 'Sessiz', 'Cesur', 'Şanslı', 'Kurnaz', 'Gizemli', 'Karanlık', 'Zeki'
+            'Crazy', 'Wild', 'Cool', 'Epic', 'Mighty', 'Dark', 'Fierce', 'Noble', 'Wise', 'Bold'
         ];
-        const nouns = [
-            'Agent', 'Spy', 'Detective', 'Ghost', 'Ninja', 'Fox', 'Wolf', 'Hawk', 'Owl', 'Panther',
-            'Ajan', 'Casus', 'Dedektif', 'Hayalet', 'Ninja', 'Tilki', 'Kurt', 'Şahin', 'Baykuş', 'Panter'
+        const names = [
+            'Mike', 'Alex', 'Sam', 'Max', 'Jack', 'Leo', 'Finn', 'Ace', 'Zack', 'Cole',
+            'Jake', 'Ryan', 'Nick', 'Evan', 'Luke', 'Adam', 'Noah', 'Ethan', 'Owen', 'Kyle'
         ];
         const randomNum = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
         const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-        const guestName = `${randomAdj}${randomNoun}${randomNum}`;
+        const randomName = names[Math.floor(Math.random() * names.length)];
+        const guestName = `${randomAdj}${randomName}${randomNum}`;
 
         const { data, error } = await supabase.auth.signInAnonymously();
 
