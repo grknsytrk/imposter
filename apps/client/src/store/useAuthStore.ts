@@ -204,6 +204,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await supabase.auth.signOut();
             set({ user: null, session: null, profile: null });
         }
+
+        // Redirect to home page to fix URL staying at /lobby
+        if (window.location.pathname !== '/') {
+            window.location.href = '/';
+        }
     },
 
     resetPassword: async (emailOrUsername: string) => {
@@ -235,21 +240,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Set profileLoading to true BEFORE auth to prevent ProfileSetup flash
         set({ profileLoading: true });
 
-        // Random guest name generator: <adjective><name><4-digit number>
-        const adjectives = [
-            'Sneaky', 'Clever', 'Mysterious', 'Shadow', 'Swift', 'Silent', 'Brave', 'Lucky', 'Crafty', 'Sly',
-            'Crazy', 'Wild', 'Cool', 'Epic', 'Mighty', 'Dark', 'Fierce', 'Noble', 'Wise', 'Bold'
-        ];
-        const names = [
-            'Mike', 'Alex', 'Sam', 'Max', 'Jack', 'Leo', 'Finn', 'Ace', 'Zack', 'Cole',
-            'Jake', 'Ryan', 'Nick', 'Evan', 'Luke', 'Adam', 'Noah', 'Ethan', 'Owen', 'Kyle'
-        ];
-        const randomNum = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
-        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const randomName = names[Math.floor(Math.random() * names.length)];
-        const guestName = `${randomAdj}${randomName}${randomNum}`;
-
         try {
+            // FIRST: Check if there's an existing anonymous session
+            const { data: { session: existingSession } } = await supabase.auth.getSession();
+
+            if (existingSession?.user?.is_anonymous) {
+                // Reuse existing anonymous session - just fetch profile
+                const profile = await get().fetchProfile();
+                set({
+                    user: existingSession.user,
+                    session: existingSession,
+                    profile,
+                    profileLoading: false
+                });
+                return { error: null, guestName: profile?.username };
+            }
+
+            // No existing anonymous session - create new one
+            // Random guest name generator: <adjective><name><4-digit number>
+            const adjectives = [
+                'Sneaky', 'Clever', 'Mysterious', 'Shadow', 'Swift', 'Silent', 'Brave', 'Lucky', 'Crafty', 'Sly',
+                'Crazy', 'Wild', 'Cool', 'Epic', 'Mighty', 'Dark', 'Fierce', 'Noble', 'Wise', 'Bold'
+            ];
+            const names = [
+                'Mike', 'Alex', 'Sam', 'Max', 'Jack', 'Leo', 'Finn', 'Ace', 'Zack', 'Cole',
+                'Jake', 'Ryan', 'Nick', 'Evan', 'Luke', 'Adam', 'Noah', 'Ethan', 'Owen', 'Kyle'
+            ];
+            const randomNum = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+            const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            const guestName = `${randomAdj}${randomName}${randomNum}`;
+
             const { data, error } = await supabase.auth.signInAnonymously();
 
             if (!error && data.user) {
