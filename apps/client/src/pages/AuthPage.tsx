@@ -280,12 +280,24 @@ export function AuthPage() {
                         <div className="flex-1 h-px bg-border" />
                     </div>
 
+                    {/* Guest Login */}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleGuestLogin}
+                        disabled={guestLoading}
+                        className="w-full h-14 text-lg font-bold gap-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0"
+                    >
+                        <UserCheck className="w-5 h-5" />
+                        {guestLoading ? '...' : t('buttons.playAsGuest')}
+                    </Button>
+
                     {/* Google Login */}
                     <Button
                         type="button"
                         variant="outline"
                         onClick={handleGoogleLogin}
-                        className="w-full h-14 text-lg font-bold gap-3"
+                        className="w-full h-14 text-lg font-bold gap-3 mt-3"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
@@ -306,18 +318,6 @@ export function AuthPage() {
                             />
                         </svg>
                         Continue with Google
-                    </Button>
-
-                    {/* Guest Login */}
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={handleGuestLogin}
-                        disabled={guestLoading}
-                        className="w-full h-14 text-lg font-bold gap-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0"
-                    >
-                        <UserCheck className="w-5 h-5" />
-                        {guestLoading ? '...' : t('buttons.playAsGuest')}
                     </Button>
                 </motion.div>
 
@@ -551,7 +551,7 @@ export function AuthPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }
 
