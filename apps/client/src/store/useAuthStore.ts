@@ -219,6 +219,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     signInAnonymously: async () => {
+        // Set profileLoading to true BEFORE auth to prevent ProfileSetup flash
+        set({ profileLoading: true });
+
         // Random guest name generator: <adjective><name><4-digit number>
         const adjectives = [
             'Sneaky', 'Clever', 'Mysterious', 'Shadow', 'Swift', 'Silent', 'Brave', 'Lucky', 'Crafty', 'Sly',
@@ -233,21 +236,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const randomName = names[Math.floor(Math.random() * names.length)];
         const guestName = `${randomAdj}${randomName}${randomNum}`;
 
-        const { data, error } = await supabase.auth.signInAnonymously();
+        try {
+            const { data, error } = await supabase.auth.signInAnonymously();
 
-        if (!error && data.user) {
-            // Create a guest profile
-            await supabase.from('profiles').upsert({
-                id: data.user.id,
-                username: guestName,
-                avatar: 'ghost',
-                email: null // Guest has no email
-            });
+            if (!error && data.user) {
+                // Create a guest profile
+                await supabase.from('profiles').upsert({
+                    id: data.user.id,
+                    username: guestName,
+                    avatar: 'ghost',
+                    email: null // Guest has no email
+                });
 
-            const profile = await get().fetchProfile();
-            set({ profile });
+                const profile = await get().fetchProfile();
+                set({ profile, profileLoading: false });
+            } else {
+                set({ profileLoading: false });
+            }
+
+            return { error: error as Error | null, guestName: error ? undefined : guestName };
+        } catch (err) {
+            set({ profileLoading: false });
+            return { error: err as Error, guestName: undefined };
         }
-
-        return { error: error as Error | null, guestName: error ? undefined : guestName };
     }
 }));
