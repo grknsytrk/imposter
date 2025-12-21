@@ -48,7 +48,7 @@ export class GameLogic {
         this.timers.set(roomId, timer);
     }
 
-    private initializeGame(room: Room): GameState {
+    private initializeGame(room: Room, language: string = 'en'): GameState {
         // Kategori seç (seçilmişse onu kullan, yoksa rastgele)
         let category;
         if (room.selectedCategory) {
@@ -57,10 +57,14 @@ export class GameLogic {
             category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
         }
 
-        // Kelime listesini al (bilingual ise TR kullan, değilse direkt kullan)
-        const wordList = Array.isArray(category.words)
-            ? category.words
-            : (category.words.tr || category.words.en);
+        // Kelime listesini al (bilingual ise dile göre seç)
+        let wordList: string[];
+        if (Array.isArray(category.words)) {
+            wordList = category.words;
+        } else {
+            // Dile göre kelime listesi seç
+            wordList = language === 'tr' ? category.words.tr : category.words.en;
+        }
         const word = wordList[Math.floor(Math.random() * wordList.length)];
 
         // Rastgele imposter seç
@@ -501,7 +505,7 @@ export class GameLogic {
             });
         });
 
-        socket.on('start_game', () => {
+        socket.on('start_game', ({ language }: { language?: string } = {}) => {
             const player = this.players.get(socket.id);
             if (!player) return;
 
@@ -516,9 +520,9 @@ export class GameLogic {
                 return;
             }
 
-            // Oyunu başlat
+            // Oyunu başlat (dil parametresi ile)
             room.status = 'PLAYING';
-            room.gameState = this.initializeGame(room);
+            room.gameState = this.initializeGame(room, language || 'en');
 
             io.to(room.id).emit('room_update', room);
             io.emit('room_list', this.getRoomList());
@@ -526,7 +530,7 @@ export class GameLogic {
             // Rol gösterme fazını başlat
             this.transitionToPhase(room, 'ROLE_REVEAL');
 
-            console.log(`Game started in room ${room.id}`);
+            console.log(`Game started in room ${room.id} [Language: ${language || 'en'}]`);
         });
 
         socket.on('submit_hint', (hint: string) => {

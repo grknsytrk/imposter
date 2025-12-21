@@ -5,6 +5,7 @@ const SOUND_FILES = {
     click: '/sounds/zapsplat_multimedia_pop_up_pop_002_91296.mp3',
     message: '/sounds/zapsplat_multimedia_bell_ping_new_alert_notification_002_87942.mp3',
     success: '/sounds/zapsplat_multimedia_ui_software_game_success_open_113743.mp3',
+    shush: '/sounds/shush.mp3', // Among Us style shush sound - add shush.mp3 to public/sounds/
 };
 
 // Singleton cache to avoid re-fetching
@@ -54,15 +55,14 @@ export const useGameSound = () => {
         // -----------------------------------------------------
         // 2. DİĞER SESLER (MP3 DOSYALARI)
         // -----------------------------------------------------
-        // @ts-ignore
-        const src = SOUND_FILES[type];
+        const src = SOUND_FILES[type as keyof typeof SOUND_FILES];
         if (!src) return;
 
         const audio = audioCache[src];
 
         if (audio) {
             audio.currentTime = 0;
-            audio.volume = type === 'message' ? 0.6 : 0.4;
+            audio.volume = type === 'shush' ? 0.7 : (type === 'message' ? 0.6 : 0.4);
             audio.play().catch(() => { });
         }
     }, []);

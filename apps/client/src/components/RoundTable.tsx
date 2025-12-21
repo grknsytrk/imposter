@@ -168,7 +168,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
 
                                             {/* Discussion Bubble - Multiple Hints */}
                                             {hints[p.id] && hints[p.id].length > 0 && (phase === 'DISCUSSION' || phase === 'HINT_ROUND' || phase === 'VOTING') && (
-                                                <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-max max-w-[200px] bg-popover p-3 rounded-2xl rounded-bl-none shadow-xl border-4 border-border text-popover-foreground z-[100] flex flex-col gap-2 whitespace-normal break-words">
+                                                <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-max max-w-[200px] bg-popover p-3 rounded-2xl rounded-bl-none shadow-xl border-4 border-border text-popover-foreground z-[200] flex flex-col gap-2 whitespace-normal break-words">
                                                     {hints[p.id].map((hint, index) => (
                                                         <div key={index} className="flex flex-col">
                                                             <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-70">Round {index + 1}</span>
