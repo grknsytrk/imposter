@@ -21,7 +21,9 @@
         "refresh": "Yenile",
         "copy": "Kopyala",
         "send": "Gönder",
-        "unlock": "Kilidi Aç"
+        "unlock": "Kilidi Aç",
+        "playAsGuest": "Misafir Olarak Oyna",
+        "continueAsGuest": "Hızlı Oyna"
     },
     "nav": {
         "rules": "Kurallar",

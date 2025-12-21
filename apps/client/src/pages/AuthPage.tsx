@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
-import { Mail, Lock, LogIn, UserPlus, AlertCircle, X, Shield, Gamepad2, MessageSquare, AlertTriangle, User, KeyRound } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, AlertCircle, X, Shield, Gamepad2, MessageSquare, AlertTriangle, User, KeyRound, UserCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 export function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
@@ -21,7 +22,9 @@ export function AuthPage() {
     const [forgotMessage, setForgotMessage] = useState('');
     const [forgotError, setForgotError] = useState('');
 
-    const { signIn, signUp, signInWithGoogle, resetPassword } = useAuthStore();
+    const { signIn, signUp, signInWithGoogle, resetPassword, signInAnonymously } = useAuthStore();
+    const { t } = useTranslation();
+    const [guestLoading, setGuestLoading] = useState(false);
 
     // Supabase hata mesajlarını kullanıcı dostu mesajlara çevir
     const formatErrorMessage = (message: string): string => {
@@ -95,6 +98,19 @@ export function AuthPage() {
         setError('');
         const { error } = await signInWithGoogle();
         if (error) setError(error.message);
+    };
+
+    const handleGuestLogin = async () => {
+        setError('');
+        setGuestLoading(true);
+        try {
+            const { error } = await signInAnonymously();
+            if (error) setError(formatErrorMessage(error.message));
+        } catch (err) {
+            setError('Something went wrong. Please try again!');
+        } finally {
+            setGuestLoading(false);
+        }
     };
 
     return (
@@ -290,6 +306,18 @@ export function AuthPage() {
                             />
                         </svg>
                         Continue with Google
+                    </Button>
+
+                    {/* Guest Login */}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleGuestLogin}
+                        disabled={guestLoading}
+                        className="w-full h-14 text-lg font-bold gap-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0"
+                    >
+                        <UserCheck className="w-5 h-5" />
+                        {guestLoading ? '...' : t('buttons.playAsGuest')}
                     </Button>
                 </motion.div>
 
