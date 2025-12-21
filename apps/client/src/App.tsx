@@ -35,7 +35,6 @@ import {
   ArrowRight,
   Copy,
   Check,
-  Clock,
   Vote,
   Trophy,
   Skull,
@@ -55,7 +54,7 @@ function App() {
   const location = useLocation();
   const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState, disconnect } = useGameStore();
   const { signOut } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { t: tGame } = useTranslation('game');
   const { playTone } = useGameSound();
   const [avatarIndex, setAvatarIndex] = useState(0);
@@ -682,7 +681,7 @@ function App() {
                             {player?.id === room.ownerId ? (
                               <>
                                 <Button
-                                  onClick={startGame}
+                                  onClick={() => startGame(i18n.language)}
                                   disabled={room.players.length < 3}
                                   className="w-full h-14 premium-button premium-button-primary text-lg shadow-xl"
                                 >
@@ -730,10 +729,35 @@ function App() {
                     avatars={AVATARS}
                     centerContent={
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <Clock className="w-8 h-8 text-muted-foreground animate-pulse" />
-                        <span className="text-xl font-heading font-black text-foreground tabular-nums">
-                          {gameState.turnTimeLeft || gameState.phaseTimeLeft}s
-                        </span>
+                        {/* Progress Timer */}
+                        <div className="relative w-16 h-16">
+                          <svg className="w-16 h-16 transform -rotate-90">
+                            <circle
+                              cx="32" cy="32" r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              className="text-muted/30"
+                            />
+                            <circle
+                              cx="32" cy="32" r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                              className="text-primary transition-all duration-1000 ease-linear"
+                              style={{
+                                strokeDasharray: 2 * Math.PI * 28,
+                                strokeDashoffset: 2 * Math.PI * 28 * (1 - ((gameState.turnTimeLeft || gameState.phaseTimeLeft) / 30))
+                              }}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-lg font-heading font-black text-foreground tabular-nums">
+                              {gameState.turnTimeLeft || gameState.phaseTimeLeft}
+                            </span>
+                          </div>
+                        </div>
                         <span className="text-[10px] font-black uppercase text-muted-foreground">
                           {gameState.turnOrder[gameState.currentTurnIndex] === player?.id ? "YOUR TURN" : "WAITING..."}
                         </span>
@@ -783,10 +807,35 @@ function App() {
                     avatars={AVATARS}
                     centerContent={
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <MessageSquare className="w-8 h-8 text-purple-500 animate-pulse" />
-                        <span className="text-xl font-heading font-black text-purple-600 tabular-nums">
-                          {gameState.phaseTimeLeft}s
-                        </span>
+                        {/* Progress Timer */}
+                        <div className="relative w-16 h-16">
+                          <svg className="w-16 h-16 transform -rotate-90">
+                            <circle
+                              cx="32" cy="32" r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              className="text-muted/30"
+                            />
+                            <circle
+                              cx="32" cy="32" r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                              className="text-purple-500 transition-all duration-1000 ease-linear"
+                              style={{
+                                strokeDasharray: 2 * Math.PI * 28,
+                                strokeDashoffset: 2 * Math.PI * 28 * (1 - (gameState.phaseTimeLeft / 60))
+                              }}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-lg font-heading font-black text-purple-600 tabular-nums">
+                              {gameState.phaseTimeLeft}
+                            </span>
+                          </div>
+                        </div>
                         <span className="text-[10px] font-black uppercase text-purple-400">
                           DISCUSS!
                         </span>
@@ -807,25 +856,47 @@ function App() {
                     hints={gameState.hints}
                     avatars={AVATARS}
                     onVote={(pid) => {
+                      // Allow changing selection until vote is confirmed
                       if (!gameState.votes[player?.id || '']) {
-                        setSelectedVote(pid);
+                        setSelectedVote(selectedVote === pid ? null : pid); // Toggle or select new
                       }
                     }}
                     votes={{ ...gameState.votes, ...(selectedVote ? { [player?.id || '']: selectedVote } : {}) }}
                     centerContent={
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <motion.div
-                            animate={{ rotate: [-10, 10, -10] }}
-                            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                          >
-                            <Vote className="w-8 h-8 text-rose-500" />
-                          </motion.div>
-                          {gameState.votes[player?.id || ''] && <CheckCircle className="w-6 h-6 text-emerald-500" />}
+                        {/* Progress Timer */}
+                        <div className="relative w-16 h-16">
+                          <svg className="w-16 h-16 transform -rotate-90">
+                            <circle
+                              cx="32" cy="32" r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              className="text-muted/30"
+                            />
+                            <circle
+                              cx="32" cy="32" r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                              className="text-rose-500 transition-all duration-1000 ease-linear"
+                              style={{
+                                strokeDasharray: 2 * Math.PI * 28,
+                                strokeDashoffset: 2 * Math.PI * 28 * (1 - (gameState.phaseTimeLeft / 30))
+                              }}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {gameState.votes[player?.id || ''] ? (
+                              <CheckCircle className="w-6 h-6 text-emerald-500" />
+                            ) : (
+                              <span className="text-lg font-heading font-black text-rose-600 tabular-nums">
+                                {gameState.phaseTimeLeft}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-xl font-heading font-black text-rose-600 tabular-nums">
-                          {gameState.phaseTimeLeft}s
-                        </span>
                         {!gameState.votes[player?.id || ''] ? (
                           <div className="flex flex-col items-center">
                             <span className="text-[10px] font-black uppercase text-rose-400">VOTE NOW</span>
@@ -895,11 +966,11 @@ function App() {
                       </div>
                     }
                   />
-                  <div className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 pointer-events-none">
-                    <div className="bg-popover/90 backdrop-blur p-4 rounded-2xl border-2 border-border shadow-xl text-center">
-                      <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">VOTE BREAKDOWN</h4>
+                  <div className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 pointer-events-none z-[200]">
+                    <div className="bg-popover/95 backdrop-blur-md p-4 rounded-2xl border-2 border-border shadow-2xl text-center">
+                      <h4 className="text-[10px] font-black text-popover-foreground uppercase tracking-widest mb-2">VOTE BREAKDOWN</h4>
                       <div className="flex flex-wrap justify-center gap-2">
-                        <span className="text-xs font-bold text-muted-foreground">Check the table for details</span>
+                        <span className="text-xs font-bold text-popover-foreground/70">Check the table for details</span>
                       </div>
                     </div>
                   </div>
@@ -1280,7 +1351,7 @@ function App() {
                       : 'bg-muted text-card-foreground border-border rounded-bl-none'}`}>
                       <p className="text-sm font-bold leading-snug break-words">{m.content}</p>
                     </div>
-                    <span className="text-[9px] font-black text-card-foreground/70 mt-1 uppercase tracking-wider mx-1">{m.playerName}</span>
+                    <span className="text-[9px] font-black text-foreground/60 mt-1 uppercase tracking-wider mx-1">{m.playerName}</span>
                   </div>
                 ))}
                 <div ref={chatEndRef} />
@@ -1292,7 +1363,7 @@ function App() {
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1 bg-white border-4 border-slate-300 rounded-xl px-4 py-2 font-black text-slate-700 uppercase tracking-wide placeholder:text-slate-400 focus:border-primary focus:outline-none focus:scale-[1.02] transition-all shadow-inner"
+                    className="flex-1 bg-card border-4 border-border rounded-xl px-4 py-2 font-bold text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:scale-[1.02] transition-all shadow-inner"
                     placeholder={t('chat.placeholder')}
                   />
                   <Button

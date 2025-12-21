@@ -34,7 +34,7 @@ interface GameState {
     disconnect: () => void;
     createRoom: (name: string, password?: string, category?: string) => void;
     joinRoom: (roomId: string, password?: string) => void;
-    startGame: () => void;
+    startGame: (language?: string) => void;
     leaveRoom: () => void;
     sendMessage: (content: string) => void;
     submitHint: (hint: string) => void;
@@ -145,8 +145,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         get().socket?.emit('join_room', { roomId, password });
     },
 
-    startGame: () => {
-        get().socket?.emit('start_game');
+    startGame: (language?: string) => {
+        get().socket?.emit('start_game', { language: language || 'en' });
     },
 
     leaveRoom: () => {
