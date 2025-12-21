@@ -193,8 +193,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     signOut: async () => {
-        await supabase.auth.signOut();
-        set({ user: null, session: null, profile: null });
+        const user = get().user;
+        // For anonymous users, DON'T clear Supabase session - keep it so they can rejoin with same account
+        // Only clear local state so they go back to login page, but session persists in localStorage
+        if (user?.is_anonymous) {
+            // Just clear local state, don't call supabase.auth.signOut()
+            set({ user: null, session: null, profile: null });
+        } else {
+            // For real users (Google, email), do full signOut
+            await supabase.auth.signOut();
+            set({ user: null, session: null, profile: null });
+        }
     },
 
     resetPassword: async (emailOrUsername: string) => {
