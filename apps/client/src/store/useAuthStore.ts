@@ -258,14 +258,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             if (existingSession?.user?.is_anonymous) {
                 // Clear the logout flag - user is logging back in
                 localStorage.removeItem('guest_logged_out');
-                // Reuse existing anonymous session - just fetch profile
+                // Set user/session FIRST so fetchProfile can access it
+                set({ user: existingSession.user, session: existingSession });
+                // Now fetch profile
                 const profile = await get().fetchProfile();
-                set({
-                    user: existingSession.user,
-                    session: existingSession,
-                    profile,
-                    profileLoading: false
-                });
+                set({ profile, profileLoading: false });
                 return { error: null, guestName: profile?.username };
             }
 
