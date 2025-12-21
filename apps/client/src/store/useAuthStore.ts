@@ -51,8 +51,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         supabase.auth.onAuthStateChange(async (_event, session) => {
             set({ session, user: session?.user ?? null });
             if (session?.user) {
-                const profile = await get().fetchProfile();
-                set({ profile });
+                // Skip profile fetch for anonymous users - signInAnonymously handles it
+                if (!session.user.is_anonymous) {
+                    const profile = await get().fetchProfile();
+                    set({ profile });
+                }
+                // For anonymous users, profileLoading is already managed by signInAnonymously
             } else {
                 set({ profile: null });
             }
