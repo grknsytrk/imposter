@@ -21,7 +21,9 @@
         "refresh": "Refresh",
         "copy": "Copy",
         "send": "Send",
-        "unlock": "Unlock"
+        "unlock": "Unlock",
+        "playAsGuest": "Play as Guest",
+        "continueAsGuest": "Quick Play"
     },
     "nav": {
         "rules": "Rules",

@@ -28,6 +28,7 @@ interface AuthState {
     getEmailByLoginUsername: (loginUsername: string) => Promise<string | null>;
     resetPassword: (emailOrUsername: string) => Promise<{ error: Error | null }>;
     updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+    signInAnonymously: () => Promise<{ error: Error | null; guestName?: string }>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -215,5 +216,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             password: newPassword
         });
         return { error: error as Error | null };
+    },
+
+    signInAnonymously: async () => {
+        // Random guest name generator
+        const adjectives = [
+            'Sneaky', 'Clever', 'Mysterious', 'Shadow', 'Swift', 'Silent', 'Brave', 'Lucky', 'Crafty', 'Sly',
+            'Gizli', 'Şüpheli', 'Hızlı', 'Sessiz', 'Cesur', 'Şanslı', 'Kurnaz', 'Gizemli', 'Karanlık', 'Zeki'
+        ];
+        const nouns = [
+            'Agent', 'Spy', 'Detective', 'Ghost', 'Ninja', 'Fox', 'Wolf', 'Hawk', 'Owl', 'Panther',
+            'Ajan', 'Casus', 'Dedektif', 'Hayalet', 'Ninja', 'Tilki', 'Kurt', 'Şahin', 'Baykuş', 'Panter'
+        ];
+        const randomNum = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+        const guestName = `${randomAdj}${randomNoun}${randomNum}`;
+
+        const { data, error } = await supabase.auth.signInAnonymously();
+
+        if (!error && data.user) {
+            // Create a guest profile
+            await supabase.from('profiles').upsert({
+                id: data.user.id,
+                username: guestName,
+                avatar: 'ghost',
+                email: null // Guest has no email
+            });
+
+            const profile = await get().fetchProfile();
+            set({ profile });
+        }
+
+        return { error: error as Error | null, guestName: error ? undefined : guestName };
     }
 }));
