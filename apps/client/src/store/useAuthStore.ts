@@ -58,6 +58,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         supabase.auth.onAuthStateChange(async (_event, session) => {
+            // Check logout flag for anonymous users - prevent auto-login after logout
+            const wasGuestLoggedOut = localStorage.getItem('guest_logged_out') === 'true';
+
+            if (session?.user?.is_anonymous && wasGuestLoggedOut) {
+                // Guest logged out - don't restore session
+                set({ session: null, user: null, profile: null });
+                return;
+            }
+
             set({ session, user: session?.user ?? null });
             if (session?.user) {
                 // Skip profile fetch for anonymous users - signInAnonymously handles it
