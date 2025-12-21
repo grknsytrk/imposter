@@ -24,17 +24,15 @@ function AuthWrapper() {
     initialize().then(() => setInitialized(true));
   }, [initialize]);
 
-  // Reset connection state when user changes (important for email/password login)
+  // Reset connection state when user changes (login, logout, or user switch)
   useEffect(() => {
     const currentUserId = user?.id ?? null;
 
-    // If user changed (new login or logout), reset connection tracking
+    // If user changed in any way (logout, new login, or different user)
     if (currentUserId !== previousUserId.current) {
-      if (currentUserId && previousUserId.current !== null) {
-        // New user logged in (different from before), reset connection attempt
-        connectionAttempted.current = false;
-        setHasConnectedOnce(false);
-      }
+      // Reset connection tracking for any user change
+      connectionAttempted.current = false;
+      setHasConnectedOnce(false);
       previousUserId.current = currentUserId;
     }
   }, [user?.id]);
