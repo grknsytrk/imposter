@@ -10,6 +10,9 @@ A high-stakes social deduction game where your only weapon is your intuition. In
 ![Vite](https://img.shields.io/badge/Vite-7.2-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Fastify](https://img.shields.io/badge/Fastify-4.26-000000?style=flat-square&logo=fastify&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-4.7-010101?style=flat-square&logo=socket.io&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-2.1-6E9F18?style=flat-square&logo=vitest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-1.49-2EAD33?style=flat-square&logo=playwright&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)
 
 ## Features
 
@@ -22,6 +25,8 @@ A high-stakes social deduction game where your only weapon is your intuition. In
 - **Secure Auth** - Full account integration using **Supabase Auth**.
 - **Localized** - Support for both English and Turkish out of the box.
 - **Mobile Ready** - Fully responsive design that keeps the game immersive on any device.
+- **Tie Breaking** - When votes are tied, a new voting round automatically begins until a winner emerges.
+- **Testable Engine** - Pure, deterministic game logic with 26 unit and E2E tests.
 
 ## The Gameplay
 
@@ -76,6 +81,9 @@ You'll need Node.js version 20 or higher. The project structure is a monorepo ma
 | Zustand | State Management |
 | Supabase | Auth & Database |
 | Turborepo | Monorepo Management |
+| Vitest | Unit Testing |
+| Playwright | E2E Testing |
+| GitHub Actions | CI Pipeline |
 
 ## Project Structure
 
@@ -87,12 +95,50 @@ You'll need Node.js version 20 or higher. The project structure is a monorepo ma
 │   │   ├── src/pages      # Main views (Home, Auth, Game)
 │   │   └── src/locales    # i18n translations
 │   └── server/           # The Fastify backend
-│       ├── src/handlers   # Socket event logic
-│       └── src/logic      # Game state engine
+│       ├── src/engine/    # Pure game logic (validators, reducers, core)
+│       └── src/__tests__/ # Integration tests
 ├── packages/
 │   └── shared/           # Types and constants used by both apps
+├── .github/workflows/    # CI pipeline
 └── turbo.json            # Monorepo config
 ```
+
+## Game Engine Architecture
+
+The backend uses a **Command Pattern** with pure, testable functions:
+
+```typescript
+// validators.ts - Pure validation
+validateVote(room, cmd) → error | null
+
+// reducers.ts - Immutable state changes
+applyVote(state, cmd) → newVotes
+
+// core.ts - Orchestration
+handleVote(room, cmd) → { success, nextVotes } | { success, error }
+```
+
+Socket handlers are thin wrappers that delegate to the engine core.
+
+## Testing
+
+Run all tests:
+
+```bash
+# Backend unit tests (17 tests)
+cd apps/server && npm test
+
+# Frontend E2E tests (9 tests)
+cd apps/client && npx playwright test
+```
+
+## CI/CD
+
+Every push to `main` triggers GitHub Actions:
+- Install dependencies
+- Build all packages
+- Run server tests
+- Upload build artifacts
 
 ## Contributing
 
