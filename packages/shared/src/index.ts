@@ -1,5 +1,8 @@
 export const PROJECT_NAME = "Imposter";
 
+// Re-export command types
+export * from './commands';
+
 // ==================== PLAYER ====================
 export type PlayerRole = 'CITIZEN' | 'IMPOSTER' | null;
 

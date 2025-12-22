@@ -1,7 +1,33 @@
 import { Socket, Server } from 'socket.io';
 import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage } from '@imposter/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { handleVote } from './engine';
 
+/**
+ * Pure function: Oyları sayar ve en çok oy alan oyuncuyu döner.
+ * Beraberlik varsa null döner (tekrar oylama gerekir).
+ * NO side effects, NO IO - unit testlenebilir.
+ */
+export function calculateEliminated(votes: Record<string, string>): string | null {
+    const voteCounts: Record<string, number> = {};
+    Object.values(votes).forEach(votedId => {
+        voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+    });
+
+    // Oyları sırala (en yüksekten düşüğe)
+    const sorted = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
+
+    // Hiç oy yoksa
+    if (sorted.length === 0) return null;
+
+    // Tek aday varsa veya ilk iki farklıysa → kazanan belli
+    if (sorted.length === 1 || sorted[0][1] > sorted[1][1]) {
+        return sorted[0][0];
+    }
+
+    // Beraberlik var → null dön (tekrar oylama)
+    return null;
+}
 export class GameLogic {
     private players: Map<string, Player> = new Map();
     private rooms: Map<string, Room> = new Map();
@@ -283,29 +309,25 @@ export class GameLogic {
     private resolveVotes(room: Room) {
         if (!room.gameState) return;
 
-        // Oyları say
-        const voteCounts: Record<string, number> = {};
-        Object.values(room.gameState.votes).forEach(votedId => {
-            voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
-        });
+        // Pure function ile elenen oyuncuyu hesapla
+        const eliminatedId = calculateEliminated(room.gameState.votes);
 
-        // En çok oy alanı bul
-        let maxVotes = 0;
-        let eliminatedId: string | null = null;
+        // Beraberlik var → tekrar oylama
+        if (eliminatedId === null) {
+            // Oyları sıfırla
+            room.gameState.votes = {};
+            room.players.forEach(p => p.hasVoted = false);
 
-        Object.entries(voteCounts).forEach(([playerId, count]) => {
-            if (count > maxVotes) {
-                maxVotes = count;
-                eliminatedId = playerId;
-            }
-        });
+            // Tekrar VOTING fazına geç
+            this.transitionToPhase(room, 'VOTING');
+            return;
+        }
 
-        if (eliminatedId) {
-            room.gameState.eliminatedPlayerId = eliminatedId;
-            const eliminatedPlayer = room.players.find(p => p.id === eliminatedId);
-            if (eliminatedPlayer) {
-                eliminatedPlayer.isEliminated = true;
-            }
+        // Elenen oyuncuyu işaretle
+        room.gameState.eliminatedPlayerId = eliminatedId;
+        const eliminatedPlayer = room.players.find(p => p.id === eliminatedId);
+        if (eliminatedPlayer) {
+            eliminatedPlayer.isEliminated = true;
         }
 
         this.transitionToPhase(room, 'VOTE_RESULT');
@@ -579,48 +601,37 @@ export class GameLogic {
             this.broadcastGameState(room);
         });
 
-        socket.on('submit_vote', (votedPlayerId: string) => {
-            const player = this.players.get(socket.id);
-            if (!player) return;
-
+        socket.on('submit_vote', (targetId: string) => {
             const room = Array.from(this.rooms.values()).find(r =>
-                r.players.some(p => p.id === socket.id) && r.gameState?.phase === 'VOTING'
+                r.players.some(p => p.id === socket.id)
             );
+            if (!room) return;
 
-            if (!room || !room.gameState) return;
+            // Delegate to engine core (pure function)
+            const result = handleVote(room, {
+                type: 'SUBMIT_VOTE',
+                playerId: socket.id,
+                targetId
+            });
 
-            // Zaten oy verdiyse reddet
-            if (room.gameState.votes[socket.id]) {
-                socket.emit('error', 'ALREADY VOTED');
-                return;
-            }
+            if (result.success) {
+                // Apply state change
+                room.gameState!.votes = result.nextVotes;
+                const player = this.players.get(socket.id);
+                if (player) player.hasVoted = true;
 
-            // Kendine oy veremez
-            if (votedPlayerId === socket.id) {
-                socket.emit('error', 'CANNOT VOTE FOR YOURSELF');
-                return;
-            }
+                this.broadcastGameState(room);
+                io.to(room.id).emit('room_update', room);
 
-            // Elenen birine oy veremez
-            const votedPlayer = room.players.find(p => p.id === votedPlayerId);
-            if (!votedPlayer || votedPlayer.isEliminated) {
-                socket.emit('error', 'INVALID VOTE');
-                return;
-            }
-
-            room.gameState.votes[socket.id] = votedPlayerId;
-            player.hasVoted = true;
-
-            this.broadcastGameState(room);
-            io.to(room.id).emit('room_update', room);
-
-            // Herkes oy verdiyse erken bitir
-            const activeVoters = room.players.filter(p => !p.isEliminated);
-            const allVoted = activeVoters.every(p => room.gameState!.votes[p.id]);
-
-            if (allVoted) {
-                this.clearRoomTimer(room.id);
-                this.resolveVotes(room);
+                // Check if all voted
+                const activeVoters = room.players.filter(p => !p.isEliminated);
+                const allVoted = activeVoters.every(p => room.gameState!.votes[p.id]);
+                if (allVoted) {
+                    this.clearRoomTimer(room.id);
+                    this.resolveVotes(room);
+                }
+            } else {
+                socket.emit('error', result.error);
             }
         });
 

@@ -1,4 +1,6 @@
 export const PROJECT_NAME = "Imposter";
+// Re-export command types
+export * from './commands';
 export const CATEGORIES = [
     {
         name: 'Animals',
