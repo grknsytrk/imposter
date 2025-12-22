@@ -38,14 +38,19 @@ export class GameLogic {
     constructor() { }
 
     private getRoomList() {
-        return Array.from(this.rooms.values()).map(r => ({
-            id: r.id,
-            name: r.name,
-            playerCount: r.players.length,
-            maxPlayers: r.maxPlayers,
-            status: r.status,
-            hasPassword: !!r.password
-        }));
+        return Array.from(this.rooms.values()).map(r => {
+            const owner = r.players.find(p => p.id === r.ownerId);
+            return {
+                id: r.id,
+                name: r.name,
+                playerCount: r.players.length,
+                maxPlayers: r.maxPlayers,
+                status: r.status,
+                hasPassword: !!r.password,
+                category: r.selectedCategory || null,
+                ownerName: owner?.name || 'Unknown'
+            };
+        });
     }
 
     private clearRoomTimer(roomId: string) {
