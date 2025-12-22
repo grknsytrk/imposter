@@ -528,13 +528,14 @@ function App() {
                         className="group bg-card border-b-4 border-muted hover:border-primary p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between relative"
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${r.hasPassword ? 'bg-amber-100' : 'bg-blue-50'}`}>
-                            {r.hasPassword ? <Lock className="w-6 h-6 text-amber-500" /> : <Gamepad2 className="w-6 h-6 text-primary" />}
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${r.hasPassword ? 'bg-amber-100' : 'bg-violet-100'}`}>
+                            {r.hasPassword ? <Lock className="w-6 h-6 text-amber-500" /> : <Users className="w-6 h-6 text-violet-500" />}
                           </div>
                           <div>
                             <h3 className="text-lg font-heading font-black text-card-foreground group-hover:text-primary transition-colors bg-clip-text">{r.name || r.id}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider">{r.id}</span>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider">{r.ownerName}</span>
+                              {r.category && <span className="px-2 py-0.5 rounded bg-violet-100 text-violet-600 text-[10px] font-bold uppercase tracking-wider">{t(`categories.${r.category}`)}</span>}
                               {r.hasPassword && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-600 text-[10px] font-bold uppercase tracking-wider">{t('lobby.private')}</span>}
                             </div>
                           </div>
