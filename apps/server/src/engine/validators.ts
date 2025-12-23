@@ -20,10 +20,9 @@ export function validateVote(room: Room, cmd: VoteCommand): VoteError | null {
         return 'WRONG_PHASE';
     }
 
-    // Check if player already voted
-    if (gameState.votes[cmd.playerId]) {
-        return 'ALREADY_VOTED';
-    }
+    // Vote overwrite allowed (last-write-wins)
+    // The last submitted vote overwrites any previous one
+    // No ALREADY_VOTED check - players can change their vote until timer ends
 
     // Check if trying to vote for self
     if (cmd.playerId === cmd.targetId) {

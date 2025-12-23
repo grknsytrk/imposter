@@ -32,6 +32,7 @@ function createMockGameState(overrides: Partial<GameState> = {}): GameState {
         roundNumber: 1,
         votes: {},
         hints: {},
+        gameMode: 'CLASSIC',
         ...overrides
     };
 }
@@ -71,7 +72,7 @@ describe('handleVote', () => {
         }
     });
 
-    it('rejects double vote', () => {
+    it('allows vote overwrite (last-write-wins)', () => {
         const room = createMockRoom({ votes: { 'p1': 'p2' } });
 
         const result = handleVote(room, {
@@ -80,9 +81,24 @@ describe('handleVote', () => {
             targetId: 'p3'
         });
 
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error).toBe('ALREADY_VOTED');
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.nextVotes['p1']).toBe('p3');
+        }
+    });
+
+    it('should not duplicate votes on overwrite', () => {
+        const room = createMockRoom({ votes: { 'p1': 'p2' } });
+
+        const result = handleVote(room, {
+            type: 'SUBMIT_VOTE',
+            playerId: 'p1',
+            targetId: 'p3'
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(Object.keys(result.nextVotes)).toHaveLength(1);
         }
     });
 
