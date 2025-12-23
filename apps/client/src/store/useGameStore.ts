@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
-import { Player, Room, ChatMessage, GamePhase } from '@imposter/shared';
+import { Player, Room, ChatMessage, GamePhase, GameMode } from '@imposter/shared';
 
 // Client tarafında kullanılan game state (server'dan gelen)
 interface ClientGameState {
@@ -18,6 +18,7 @@ interface ClientGameState {
     eliminatedPlayerId?: string;
     winner?: 'CITIZENS' | 'IMPOSTER';
     imposterId?: string; // Sadece oyun bitince gösterilir
+    gameMode?: GameMode; // CLASSIC veya BLIND
 }
 
 interface GameState {
@@ -32,7 +33,7 @@ interface GameState {
 
     connect: (name: string, avatar: string, userId?: string) => void;
     disconnect: () => void;
-    createRoom: (name: string, password?: string, category?: string) => void;
+    createRoom: (name: string, password?: string, category?: string, gameMode?: GameMode) => void;
     joinRoom: (roomId: string, password?: string) => void;
     startGame: (language?: string) => void;
     leaveRoom: () => void;
@@ -135,9 +136,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
     },
 
-    createRoom: (name: string, password?: string, category?: string) => {
+    createRoom: (name: string, password?: string, category?: string, gameMode?: GameMode) => {
         set({ messages: [], gameState: null });
-        get().socket?.emit('create_room', { name, password, category });
+        get().socket?.emit('create_room', { name, password, category, gameMode: gameMode || 'CLASSIC' });
     },
 
     joinRoom: (roomId: string, password?: string) => {

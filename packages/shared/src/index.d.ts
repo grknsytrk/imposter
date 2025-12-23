@@ -14,6 +14,7 @@ export type Player = {
 };
 export type GamePhase = 'LOBBY' | 'ROLE_REVEAL' | 'HINT_ROUND' | 'DISCUSSION' | 'VOTING' | 'VOTE_RESULT' | 'GAME_OVER';
 export type GameStatus = 'LOBBY' | 'PLAYING' | 'ENDED';
+export type GameMode = 'CLASSIC' | 'BLIND';
 export type GameState = {
     phase: GamePhase;
     category: string;
@@ -28,6 +29,8 @@ export type GameState = {
     eliminatedPlayerId?: string;
     winner?: 'CITIZENS' | 'IMPOSTER';
     hints: Record<string, string[]>;
+    gameMode: GameMode;
+    imposterWord?: string;
 };
 export type Room = {
     id: string;
@@ -39,6 +42,7 @@ export type Room = {
     status: GameStatus;
     gameState?: GameState;
     selectedCategory?: string;
+    gameMode?: GameMode;
 };
 export type ChatMessage = {
     id: string;

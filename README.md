@@ -120,6 +120,23 @@ handleVote(room, cmd) → { success, nextVotes } | { success, error }
 
 Socket handlers are thin wrappers that delegate to the engine core.
 
+## Weighted Turn Order
+
+The first speaker can subtly shape the direction of a round. To avoid early, irreversible swings, we apply a soft bias when selecting who goes first.
+
+**How it works:**
+- The imposter's chance of being the first speaker is slightly reduced
+- This is not a hard rule — the imposter can still go first
+- Only the first speaker uses weighted selection; the remaining order is a normal shuffle
+- Applies to all game modes (CLASSIC and BLIND)
+
+**Technical notes:**
+- No engine boundary violations
+- Core game flow remains unchanged
+- Fully deterministic and testable via injectable `randomFn`
+
+> Statistical behavior was validated via internal simulation (not part of the test suite).
+
 ## Testing
 
 Run all tests:

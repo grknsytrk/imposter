@@ -102,7 +102,14 @@
         "category": "Kategori",
         "random": "Rastgele",
         "privateRoom": "Özel Oda",
-        "password": "Şifre"
+        "password": "Şifre",
+        "gameMode": "Oyun Modu"
+    },
+    "gameModes": {
+        "classic": "Klasik",
+        "classicDesc": "Imposter rolünü bilir ama kelime almaz. Uyum sağla!",
+        "blind": "Kör",
+        "blindDesc": "Herkes kelime alır ama imposter'ınki farklı. Kimse kim olduğunu bilmez!"
     },
     "chat": {
         "title": "Parti Sohbeti",

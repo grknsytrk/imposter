@@ -1,5 +1,5 @@
 import { Socket, Server } from 'socket.io';
-import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage } from '@imposter/shared';
+import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage, GameMode } from '@imposter/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { handleVote } from './engine';
 
@@ -27,6 +27,94 @@ export function calculateEliminated(votes: Record<string, string>): string | nul
 
     // Beraberlik var → null dön (tekrar oylama)
     return null;
+}
+
+/**
+ * Pure helper: Mode'a göre kelime seçimi yapar.
+ * CLASSIC: Tek kelime (citizen'lar için)
+ * BLIND: İki farklı kelime (citizen ve imposter için)
+ * NOT: Engine'e girmez, game.ts içinde kalır.
+ */
+export function selectWordsForMode(
+    mode: GameMode,
+    wordList: string[],
+    randomFn: () => number = Math.random
+): { citizenWord: string; imposterWord?: string } {
+    const citizenIndex = Math.floor(randomFn() * wordList.length);
+    const citizenWord = wordList[citizenIndex];
+
+    if (mode === 'BLIND') {
+        // Farklı kelime seç (aynı kategoriden)
+        if (wordList.length <= 1) {
+            // Tek kelime varsa aynısını dön
+            return { citizenWord, imposterWord: citizenWord };
+        }
+
+        let imposterIndex: number;
+        do {
+            imposterIndex = Math.floor(randomFn() * wordList.length);
+        } while (imposterIndex === citizenIndex);
+
+        return { citizenWord, imposterWord: wordList[imposterIndex] };
+    }
+
+    // CLASSIC: Sadece citizen kelimesi
+    return { citizenWord };
+}
+
+/**
+ * Mode'a göre imposter'ın ilk konuşmacı olma ağırlığı.
+ * 1.0 = normal olasılık, 0.5 = yarı olasılık
+ */
+const IMPOSTER_FIRST_SPEAKER_WEIGHTS: Record<GameMode, number> = {
+    CLASSIC: 0.5,
+    BLIND: 0.5,
+};
+
+function getImposterFirstSpeakerWeight(mode: GameMode): number {
+    return IMPOSTER_FIRST_SPEAKER_WEIGHTS[mode] ?? 1.0;
+}
+
+/**
+ * Pure helper: Mode'a göre konuşma sırası belirler.
+ * Her modda weighted selection uygulanır.
+ * NOT: Engine'e girmez, game.ts içinde kalır.
+ */
+export function selectTurnOrder(
+    playerIds: string[],
+    imposterId: string,
+    mode: GameMode,
+    randomFn: () => number = Math.random
+): string[] {
+    const imposterWeight = getImposterFirstSpeakerWeight(mode);
+
+    // Weighted selection for first speaker
+    const weights = playerIds.map(id => ({
+        id,
+        weight: id === imposterId ? imposterWeight : 1.0
+    }));
+
+    const result: string[] = [];
+    const remaining = [...weights];
+
+    // İlk konuşmacı: Weighted selection
+    const totalWeight = remaining.reduce((sum, w) => sum + w.weight, 0);
+    let random = randomFn() * totalWeight;
+
+    for (let i = 0; i < remaining.length; i++) {
+        random -= remaining[i].weight;
+        if (random <= 0) {
+            result.push(remaining[i].id);
+            remaining.splice(i, 1);
+            break;
+        }
+    }
+
+    // Kalan oyuncular: Normal shuffle
+    const shuffledRest = remaining.map(w => w.id).sort(() => randomFn() - 0.5);
+    result.push(...shuffledRest);
+
+    return result;
 }
 export class GameLogic {
     private players: Map<string, Player> = new Map();
@@ -80,6 +168,8 @@ export class GameLogic {
     }
 
     private initializeGame(room: Room, language: string = 'en'): GameState {
+        const gameMode = room.gameMode || 'CLASSIC';
+
         // Kategori seç (seçilmişse onu kullan, yoksa rastgele)
         let category;
         if (room.selectedCategory) {
@@ -96,14 +186,17 @@ export class GameLogic {
             // Dile göre kelime listesi seç
             wordList = language === 'tr' ? category.words.tr : category.words.en;
         }
-        const word = wordList[Math.floor(Math.random() * wordList.length)];
+
+        // Mode'a göre kelime seçimi
+        const { citizenWord, imposterWord } = selectWordsForMode(gameMode, wordList);
 
         // Rastgele imposter seç
         const imposterIndex = Math.floor(Math.random() * room.players.length);
         const imposterId = room.players[imposterIndex].id;
 
-        // Sıra karıştır
-        const turnOrder = room.players.map(p => p.id).sort(() => Math.random() - 0.5);
+        // Sıra karıştır - mode'a göre weighted veya random
+        const playerIds = room.players.map(p => p.id);
+        const turnOrder = selectTurnOrder(playerIds, imposterId, gameMode);
 
         // Oyuncu rollerini ayarla
         room.players.forEach(p => {
@@ -116,7 +209,7 @@ export class GameLogic {
         return {
             phase: 'ROLE_REVEAL',
             category: category.name,
-            word: word,
+            word: citizenWord,
             imposterId: imposterId,
             currentTurnIndex: 0,
             turnOrder: turnOrder,
@@ -124,18 +217,34 @@ export class GameLogic {
             phaseTimeLeft: GAME_CONFIG.ROLE_REVEAL_TIME,
             roundNumber: 1,
             votes: {},
-            hints: {}
+            hints: {},
+            gameMode: gameMode,
+            imposterWord: imposterWord
         };
     }
 
     private getPlayerGameData(player: Player, gameState: GameState): any {
-        // Her oyuncuya özel veri gönder (imposter kelimeyi görmemeli)
-        const isImposter = player.id === gameState.imposterId;
+        const isActualImposter = player.id === gameState.imposterId;
+        const gameMode = gameState.gameMode || 'CLASSIC';
+
+        // BLIND modda imposter kendini bilmez
+        // CLASSIC modda imposter kendini bilir
+        const isImposter = gameMode === 'BLIND' ? false : isActualImposter;
+
+        // Kelime seçimi mode'a göre
+        let word: string | null;
+        if (gameMode === 'BLIND') {
+            // BLIND: Herkes kelime alır (imposter farklı kelime)
+            word = isActualImposter ? gameState.imposterWord! : gameState.word;
+        } else {
+            // CLASSIC: Imposter kelimeyi göremez
+            word = isActualImposter ? null : gameState.word;
+        }
 
         return {
             phase: gameState.phase,
             category: gameState.category,
-            word: isImposter ? null : gameState.word, // Imposter kelimeyi göremez
+            word: word,
             isImposter: isImposter,
             currentTurnIndex: gameState.currentTurnIndex,
             turnOrder: gameState.turnOrder,
@@ -146,7 +255,8 @@ export class GameLogic {
             eliminatedPlayerId: gameState.eliminatedPlayerId,
             winner: gameState.winner,
             votes: gameState.phase === 'VOTE_RESULT' || gameState.phase === 'GAME_OVER' ? gameState.votes : {},
-            imposterId: gameState.phase === 'GAME_OVER' ? gameState.imposterId : null
+            imposterId: gameState.phase === 'GAME_OVER' ? gameState.imposterId : null,
+            gameMode: gameMode
         };
     }
 
@@ -405,7 +515,7 @@ export class GameLogic {
             console.log(`Player ${name} joined the lobby${userId ? ` (userId: ${userId})` : ''}`);
         });
 
-        socket.on('create_room', ({ name, password, category }: { name: string; password?: string; category?: string }) => {
+        socket.on('create_room', ({ name, password, category, gameMode }: { name: string; password?: string; category?: string; gameMode?: GameMode }) => {
             const player = this.players.get(socket.id);
             if (!player) return;
 
@@ -418,14 +528,15 @@ export class GameLogic {
                 maxPlayers: GAME_CONFIG.MAX_PLAYERS,
                 ownerId: player.id,
                 status: 'LOBBY',
-                selectedCategory: category || undefined
+                selectedCategory: category || undefined,
+                gameMode: gameMode || 'CLASSIC'
             };
 
             this.rooms.set(roomId, room);
             socket.join(roomId);
             socket.emit('room_update', room);
             io.emit('room_list', this.getRoomList());
-            console.log(`Room ${roomId} (${room.name}) created by ${player.name}${category ? ` [Category: ${category}]` : ''}`);
+            console.log(`Room ${roomId} (${room.name}) created by ${player.name}${category ? ` [Category: ${category}]` : ''}${gameMode ? ` [Mode: ${gameMode}]` : ''}`);
         });
 
         socket.on('join_room', ({ roomId, password }: { roomId: string; password?: string }) => {

@@ -102,7 +102,14 @@
         "category": "Category",
         "random": "Random",
         "privateRoom": "Private Room",
-        "password": "Password"
+        "password": "Password",
+        "gameMode": "Game Mode"
+    },
+    "gameModes": {
+        "classic": "Classic",
+        "classicDesc": "Imposter knows their role but doesn't get a word. Blend in!",
+        "blind": "Blind",
+        "blindDesc": "Everyone gets a word, but the imposter's is different. No one knows who!"
     },
     "chat": {
         "title": "Party Chat",

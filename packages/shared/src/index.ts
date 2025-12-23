@@ -30,6 +30,9 @@ export type GamePhase =
 
 export type GameStatus = 'LOBBY' | 'PLAYING' | 'ENDED';
 
+// ==================== GAME MODE ====================
+export type GameMode = 'CLASSIC' | 'BLIND';
+
 // ==================== GAME STATE ====================
 export type GameState = {
     phase: GamePhase;
@@ -45,6 +48,8 @@ export type GameState = {
     eliminatedPlayerId?: string;   // Elenen oyuncu
     winner?: 'CITIZENS' | 'IMPOSTER';
     hints: Record<string, string[]>; // playerId -> hints array (per round)
+    gameMode: GameMode;            // CLASSIC veya BLIND
+    imposterWord?: string;         // Sadece BLIND modda kullanılır
 };
 
 // ==================== ROOM ====================
@@ -58,6 +63,7 @@ export type Room = {
     status: GameStatus;
     gameState?: GameState;
     selectedCategory?: string; // Host'un seçtiği kategori (boşsa rastgele)
+    gameMode?: GameMode;       // Default: 'CLASSIC'
 };
 
 // ==================== CHAT ====================

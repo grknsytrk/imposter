@@ -43,7 +43,8 @@ import {
   SearchX,
   UserSearch,
   LogOut,
-  BookOpen
+  BookOpen,
+  Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -96,6 +97,9 @@ function App() {
   const [isPrivateRoom, setIsPrivateRoom] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>(''); // Boş = rastgele
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  // Game Mode State
+  const [selectedGameMode, setSelectedGameMode] = useState<'CLASSIC' | 'BLIND'>('CLASSIC');
+  const [isGameModeOpen, setIsGameModeOpen] = useState(false);
   // Rules Modal State
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   // Status state
@@ -754,7 +758,7 @@ function App() {
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-lg font-heading font-black text-foreground tabular-nums">
+                            <span className="text-lg font-heading font-black text-primary tabular-nums">
                               {gameState.turnTimeLeft || gameState.phaseTimeLeft}
                             </span>
                           </div>
@@ -768,7 +772,7 @@ function App() {
 
                   {/* Input for Hint if MY TURN - Overlay at bottom */}
                   {gameState.turnOrder[gameState.currentTurnIndex] === player?.id && (
-                    <div className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-50">
+                    <div className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-[300]">
                       <motion.div
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -1116,6 +1120,52 @@ function App() {
                     </div>
                   </div>
 
+                  {/* Game Mode Selection */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-black tracking-widest text-muted-foreground uppercase ml-1">{t('lobby.gameMode')}</label>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsGameModeOpen(!isGameModeOpen)}
+                        className="premium-input w-full text-lg text-left cursor-pointer pr-12 uppercase font-bold flex items-center justify-between"
+                      >
+                        <span>{selectedGameMode === 'CLASSIC' ? t('gameModes.classic') : t('gameModes.blind')}</span>
+                        <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isGameModeOpen ? '-rotate-90' : 'rotate-90'}`} />
+                      </button>
+                      <AnimatePresence>
+                        {isGameModeOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="absolute z-50 w-full mt-2 bg-card border-2 border-border rounded-2xl shadow-xl overflow-hidden"
+                          >
+                            <button
+                              onClick={() => { setSelectedGameMode('CLASSIC'); setIsGameModeOpen(false); playTone('click'); }}
+                              className={`w-full p-4 text-left uppercase font-bold hover:bg-muted/50 transition-colors flex items-center gap-3 ${selectedGameMode === 'CLASSIC' ? 'bg-primary/10 text-primary' : ''}`}
+                            >
+                              <Users className="w-5 h-5" />
+                              <div>
+                                <div>{t('gameModes.classic')}</div>
+                                <div className="text-xs text-muted-foreground font-normal normal-case">{t('gameModes.classicDesc')}</div>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => { setSelectedGameMode('BLIND'); setIsGameModeOpen(false); playTone('click'); }}
+                              className={`w-full p-4 text-left uppercase font-bold hover:bg-muted/50 transition-colors flex items-center gap-3 ${selectedGameMode === 'BLIND' ? 'bg-primary/10 text-primary' : ''}`}
+                            >
+                              <Eye className="w-5 h-5" />
+                              <div>
+                                <div>{t('gameModes.blind')}</div>
+                                <div className="text-xs text-muted-foreground font-normal normal-case">{t('gameModes.blindDesc')}</div>
+                              </div>
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between p-4 bg-muted/50 border-2 border-border rounded-2xl">
                     <span className="text-sm font-black text-card-foreground uppercase tracking-wide">{t('lobby.privateRoom')}</span>
                     <button
@@ -1156,9 +1206,9 @@ function App() {
                     <Button onClick={() => { setIsCreateRoomOpen(false); setSelectedCategory(''); }} variant="secondary" className="flex-1 h-16 shadow-lg">{t('buttons.cancel')}</Button>
                     <Button onClick={() => {
                       const finalName = newRoomName.trim() || `ROOM #${Math.floor(Math.random() * 9000) + 1000}`;
-                      createRoom(finalName, isPrivateRoom ? newRoomPassword : undefined, selectedCategory || undefined);
+                      createRoom(finalName, isPrivateRoom ? newRoomPassword : undefined, selectedCategory || undefined, selectedGameMode);
                       setIsCreateRoomOpen(false);
-                      setNewRoomName(''); setIsPrivateRoom(false); setNewRoomPassword(''); setSelectedCategory('');
+                      setNewRoomName(''); setIsPrivateRoom(false); setNewRoomPassword(''); setSelectedCategory(''); setSelectedGameMode('CLASSIC');
                     }} variant="default" className="flex-1 h-16 shadow-lg">{t('buttons.create')}</Button>
                   </div>
                 </div>
