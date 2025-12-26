@@ -1,5 +1,6 @@
 export declare const PROJECT_NAME = "Imposter";
 export * from './commands';
+export * from './phase';
 export type PlayerRole = 'CITIZEN' | 'IMPOSTER' | null;
 export type Player = {
     id: string;
