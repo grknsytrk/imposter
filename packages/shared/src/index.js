@@ -1,6 +1,8 @@
 export const PROJECT_NAME = "Imposter";
 // Re-export command types
 export * from './commands';
+// Re-export phase contract
+export * from './phase';
 export const CATEGORIES = [
     {
         name: 'Animals',

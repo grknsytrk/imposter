@@ -427,14 +427,11 @@ export class GameLogic {
         // Pure function ile elenen oyuncuyu hesapla
         const eliminatedId = calculateEliminated(room.gameState.votes);
 
-        // Beraberlik var → tekrar oylama
+        // Beraberlik var → VOTE_RESULT'a geç (eliminatedId = undefined)
+        // Phase contract: VOTING → VOTE_RESULT her zaman
         if (eliminatedId === null) {
-            // Oyları sıfırla
-            room.gameState.votes = {};
-            room.players.forEach(p => p.hasVoted = false);
-
-            // Tekrar VOTING fazına geç
-            this.transitionToPhase(room, 'VOTING');
+            room.gameState.eliminatedPlayerId = undefined;
+            this.transitionToPhase(room, 'VOTE_RESULT');
             return;
         }
 

@@ -112,6 +112,11 @@ function App() {
   const [refreshRotation, setRefreshRotation] = useState(0);
   const [copiedRoomId, setCopiedRoomId] = useState(false);
   const [hintInput, setHintInput] = useState('');
+
+  // UX STATE: Vote selection before confirmation
+  // This is a client-side UX affordance, NOT domain state.
+  // Server remains last-write-wins and phase-authoritative.
+  // Domain state is: gameState.votes (from server)
   const [selectedVote, setSelectedVote] = useState<string | null>(null);
 
   // Pending room ID for direct link access
@@ -547,7 +552,7 @@ function App() {
 
                         <div className="flex items-center gap-6">
                           <div className="text-right">
-                            <div className="text-lg font-black text-foreground tabular-nums">{r.playerCount} / {r.maxPlayers}</div>
+                            <div className="text-lg font-black text-card-foreground tabular-nums">{r.playerCount} / {r.maxPlayers}</div>
                             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('arenas.players')}</div>
                           </div>
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
@@ -664,6 +669,9 @@ function App() {
               </div>
 
               {/* GAME CONTENT - Faza göre değişir */}
+              {/* DOMAIN STATE: gameState comes from server, client only renders.
+                  Phase transitions are server-authoritative.
+                  Client NEVER changes phase - only reflects server state. */}
               {!gameState || gameState.phase === 'LOBBY' ? (
                 <>
                   {/* LOBBY CONTENT */}

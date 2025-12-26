@@ -114,7 +114,7 @@
     "chat": {
         "title": "Party Chat",
         "noMessages": "No messages yet",
-        "placeholder": "SAY SOMETHING...",
+        "placeholder": "Say something...",
         "useChat": "Use chat to discuss"
     },
     "profile": {
