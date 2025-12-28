@@ -189,8 +189,9 @@ function App() {
       if (pendingRoomId) setPendingRoomId(null);
     } else {
       if (pendingRoomId) {
-        if (rooms.length === 0) return;
-
+        // Wait a moment for rooms to load, but don't wait forever
+        // The rooms list updates via socket, so if we're connected and rooms is still empty after first render,
+        // it means either no rooms exist or the room we're looking for doesn't exist
         const targetRoom = rooms.find((r: any) => r.id === pendingRoomId);
         if (targetRoom?.hasPassword) {
           setJoinPasswordModal({ roomId: pendingRoomId, roomName: targetRoom.name || pendingRoomId });
@@ -199,6 +200,8 @@ function App() {
           joinRoom(pendingRoomId);
           setPendingRoomId(null);
         } else {
+          // Room not found - try joining anyway (server will error if not found)
+          // This handles the case where rooms list hasn't loaded yet
           joinRoom(pendingRoomId);
           setPendingRoomId(null);
         }
