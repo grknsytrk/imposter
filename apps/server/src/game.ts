@@ -391,8 +391,18 @@ export class GameLogic {
         }
 
         if (currentIndex >= activePlayers.length) {
-            // Bu tur bitti, tekrar kontrol et
-            this.startHintTurn(room);
+            // All active players have given hints for this round
+            // Increment round or transition to discussion
+            const currentHintRound = room.gameState.roundNumber;
+            if (currentHintRound < GAME_CONFIG.HINT_ROUNDS) {
+                room.gameState.roundNumber++;
+                room.gameState.currentTurnIndex = 0;
+                room.players.forEach(p => p.hint = undefined);
+                this.startHintTurn(room);
+            } else {
+                // All hint rounds complete, go to discussion
+                this.transitionToPhase(room, 'DISCUSSION');
+            }
             return;
         }
 
