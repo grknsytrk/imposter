@@ -1370,8 +1370,10 @@ function App() {
                 )}
               </div>
               <div className="flex-1">
-                <span className="text-[10px] font-black opacity-40 block mb-1 uppercase tracking-widest">{toast.type}_LOG</span>
-                <span className="text-sm font-bold uppercase tracking-wide">{toast.message}</span>
+                <span className="text-[10px] font-heading font-black opacity-40 block mb-1 uppercase tracking-widest">
+                  {toast.type === 'error' ? 'Error' : toast.type === 'success' ? 'Success' : 'Info'}
+                </span>
+                <span className="text-sm font-heading font-bold uppercase tracking-wide">{toast.message}</span>
               </div>
               <button onClick={clearToast} className="p-2 hover:bg-muted rounded-full transition-colors opacity-50 hover:opacity-100">
                 <X className="w-4 h-4" />
