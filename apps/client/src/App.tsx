@@ -184,7 +184,8 @@ function App() {
       }
     } else if (room) {
       const roomPath = `/room/${room.id}`;
-      if (location.pathname !== roomPath) navigate(roomPath, { replace: true });
+      // Don't use replace so back button works
+      if (location.pathname !== roomPath) navigate(roomPath);
       if (pendingRoomId) setPendingRoomId(null);
     } else {
       if (pendingRoomId) {
