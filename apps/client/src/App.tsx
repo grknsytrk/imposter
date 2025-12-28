@@ -879,11 +879,7 @@ function App() {
                     hints={gameState.hints}
                     avatars={AVATARS}
                     onVote={(pid) => {
-                      // Only allow changing selection if vote hasn't been confirmed yet
-                      const hasConfirmedVote = !!gameState.votes[player?.id || ''];
-                      if (!hasConfirmedVote) {
-                        setSelectedVote(selectedVote === pid ? null : pid); // Toggle or select new
-                      }
+                      setSelectedVote(selectedVote === pid ? null : pid); // Toggle or select new
                     }}
                     votes={gameState.votes}
                     selectedPlayerId={selectedVote}

@@ -84,8 +84,8 @@ export const RoundTable: React.FC<RoundTableProps> = ({
 
                             // Interaction allowed? Only if player haven't CONFIRMED vote yet
                             // (Even if they selected someone, they can still change it until confirmed)
-                            const myVoteConfirmed = !!votes[currentPlayerId || ''];
-                            const canVote = phase === 'VOTING' && !p.isEliminated && p.id !== currentPlayerId && !myVoteConfirmed;
+
+                            const canVote = phase === 'VOTING' && !p.isEliminated && p.id !== currentPlayerId;
 
                             return (
                                 <motion.div
