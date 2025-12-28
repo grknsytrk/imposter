@@ -146,6 +146,46 @@ describe('handleVote', () => {
             expect(result.error).toBe('WRONG_PHASE');
         }
     });
+
+    it('records vote correctly for display (hasVoted check)', () => {
+        const room = createMockRoom();
+
+        const result = handleVote(room, {
+            type: 'SUBMIT_VOTE',
+            playerId: 'p1',
+            targetId: 'p2'
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            // After voting, p1 should have a vote recorded
+            expect(result.nextVotes['p1']).toBeDefined();
+            expect(result.nextVotes['p1']).toBe('p2');
+
+            // This is what the client checks for "hasVoted" display
+            const hasVoted = !!result.nextVotes['p1'];
+            expect(hasVoted).toBe(true);
+        }
+    });
+
+    it('allows vote change before phase ends (last-write-wins)', () => {
+        const room = createMockRoom({ votes: { 'p1': 'p2' } });
+
+        // First vote was p2, now change to p3
+        const result = handleVote(room, {
+            type: 'SUBMIT_VOTE',
+            playerId: 'p1',
+            targetId: 'p3'
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            // Vote should be updated to p3
+            expect(result.nextVotes['p1']).toBe('p3');
+            // Old vote should not exist
+            expect(Object.values(result.nextVotes).filter(v => v === 'p2').length).toBe(0);
+        }
+    });
 });
 
 describe('applyVote', () => {
