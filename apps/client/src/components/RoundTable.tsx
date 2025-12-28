@@ -156,15 +156,28 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                                                 {isMe && " (YOU)"}
                                             </div>
 
-                                            {/* Voted Badge (Voting Phase) */}
-                                            {phase === 'VOTING' && hasVoted && !isEliminated && (
+                                            {/* Vote Status Badge (Voting Phase) - Bottom right of avatar */}
+                                            {phase === 'VOTING' && !isEliminated && (
                                                 <motion.div
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
                                                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                                                    className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center border-2 border-white shadow-sm z-30"
+                                                    className={`absolute bottom-6 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 border-card shadow-lg z-30 ${hasVoted
+                                                        ? 'bg-emerald-500 text-white'
+                                                        : 'bg-amber-500/80 text-amber-900'
+                                                        }`}
                                                 >
-                                                    <Check className="w-3 h-3" />
+                                                    {hasVoted ? (
+                                                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    ) : (
+                                                        <motion.div
+                                                            animate={{ opacity: [0.4, 1, 0.4] }}
+                                                            transition={{ duration: 1.5, repeat: Infinity }}
+                                                            className="flex items-center gap-0.5"
+                                                        >
+                                                            <span className="text-[8px] font-black">...</span>
+                                                        </motion.div>
+                                                    )}
                                                 </motion.div>
                                             )}
 
