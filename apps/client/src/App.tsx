@@ -424,9 +424,6 @@ function App() {
                   <span className="font-heading font-black text-xl text-card-foreground tracking-wide uppercase">{t('matchmaking.title')}</span>
                 </div>
 
-                {/* Player Stats */}
-                <PlayerStats />
-
                 <motion.button
                   whileHover={{ scale: 1.02, y: -4 }}
                   whileTap={{ scale: 0.98 }}
@@ -1294,6 +1291,9 @@ function App() {
                       {player?.name}
                     </div>
                   </div>
+
+                  {/* Player Stats */}
+                  <PlayerStats />
 
                   <Button
                     onClick={() => setIsProfileOpen(false)}
