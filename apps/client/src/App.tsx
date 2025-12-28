@@ -53,7 +53,7 @@ import { CATEGORIES } from '@imposter/shared';
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState, disconnect } = useGameStore();
+  const { isConnected, createRoom, joinRoom, startGame, leaveRoom, sendMessage, submitHint, submitVote, playAgain, room, player, rooms, refreshRooms, messages, toast, clearToast, gameState, disconnect, showToast } = useGameStore();
   const { signOut } = useAuthStore();
   const { t, i18n } = useTranslation();
   const { t: tGame } = useTranslation('game');
@@ -205,7 +205,7 @@ function App() {
         navigate('/lobby', { replace: true });
       }
     }
-  }, [isConnected, room, navigate, location.pathname, pendingRoomId, joinRoom, rooms]);
+  }, [isConnected, room, navigate, location.pathname, pendingRoomId, joinRoom, rooms, showToast]);
 
   const introVariants = {
     hidden: { opacity: 0 },
@@ -869,12 +869,13 @@ function App() {
                     hints={gameState.hints}
                     avatars={AVATARS}
                     onVote={(pid) => {
-                      // Allow changing selection until vote is confirmed
-                      if (!gameState.votes[player?.id || '']) {
+                      // Only allow changing selection if vote hasn't been confirmed yet
+                      const hasConfirmedVote = !!gameState.votes[player?.id || ''];
+                      if (!hasConfirmedVote) {
                         setSelectedVote(selectedVote === pid ? null : pid); // Toggle or select new
                       }
                     }}
-                    votes={{ ...gameState.votes, ...(selectedVote ? { [player?.id || '']: selectedVote } : {}) }}
+                    votes={{ ...gameState.votes, ...(selectedVote && !gameState.votes[player?.id || ''] ? { [player?.id || '']: selectedVote } : {}) }}
                     centerContent={
                       <div className="flex flex-col items-center justify-center gap-2">
                         {/* Progress Timer */}

@@ -79,8 +79,9 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                             const isEliminated = p.isEliminated || p.id === eliminatedPlayerId;
                             const isTurn = p.id === turnPlayerId;
 
-                            // Interaction allowed? (vote overwrite allowed - last-write-wins)
-                            const canVote = phase === 'VOTING' && !p.isEliminated && p.id !== currentPlayerId;
+                            // Interaction allowed? Only if player hasn't voted yet
+                            const myVoteConfirmed = !!votes[currentPlayerId || ''];
+                            const canVote = phase === 'VOTING' && !p.isEliminated && p.id !== currentPlayerId && !myVoteConfirmed;
 
                             return (
                                 <motion.div
