@@ -75,7 +75,8 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                             const AvatarObj = avatars.find(a => a.id === p.avatar);
                             const AvatarIcon = AvatarObj?.icon || Ghost;
                             const isMe = p.id === currentPlayerId;
-                            const hasVoted = !!votes[p.id];
+                            // Use player's hasVoted flag (server sets this) OR fallback to votes object
+                            const hasVoted = p.hasVoted || !!votes[p.id];
                             const isVotedByMe = votes[currentPlayerId || ''] === p.id;
                             const isSelectedByMe = selectedPlayerId === p.id;
                             const voteCount = Object.values(votes).filter(v => v === p.id).length;

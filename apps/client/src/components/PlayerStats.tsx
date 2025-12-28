@@ -61,7 +61,7 @@ export const PlayerStats = () => {
         );
     }
 
-    const minGamesForStats = 5;
+    const minGamesForStats = 1;
     const hasEnoughData = stats.games_played >= minGamesForStats;
 
     const winRate = stats.games_played > 0
@@ -70,68 +70,68 @@ export const PlayerStats = () => {
 
     return (
         <div className="w-full select-none">
-            {/* Main Metrics - Single Row, Plain & Logical */}
-            <div className="flex items-center justify-between px-2 py-4 border-b border-white/5">
+            {/* Main Metrics - Compact Single Row */}
+            <div className="flex items-center justify-between px-1 py-2 border-b border-white/5">
                 <div className="flex flex-col items-center flex-1 border-r border-white/5 last:border-0">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider mb-1">Matches</span>
-                    <span className="font-heading font-bold text-xl text-foreground">{stats.games_played}</span>
+                    <span className="text-[8px] uppercase font-bold text-muted-foreground/60 tracking-wider">Matches</span>
+                    <span className="font-heading font-bold text-base text-foreground">{stats.games_played}</span>
                 </div>
 
                 <div className="flex flex-col items-center flex-1 border-r border-white/5 last:border-0">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider mb-1">Win Rate</span>
-                    <span className={`font-heading font-bold text-xl ${!hasEnoughData ? 'text-muted-foreground/30 text-base' : 'text-foreground'}`}>
+                    <span className="text-[8px] uppercase font-bold text-muted-foreground/60 tracking-wider">Win Rate</span>
+                    <span className={`font-heading font-bold text-base ${!hasEnoughData ? 'text-muted-foreground/30 text-sm' : 'text-foreground'}`}>
                         {hasEnoughData ? `${winRate}%` : 'N/A'}
                     </span>
                 </div>
 
                 <div className="flex flex-col items-center flex-1">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider mb-1">Victories</span>
-                    <span className="font-heading font-bold text-xl text-foreground">{stats.games_won}</span>
+                    <span className="text-[8px] uppercase font-bold text-muted-foreground/60 tracking-wider">Victories</span>
+                    <span className="font-heading font-bold text-base text-foreground">{stats.games_won}</span>
                 </div>
             </div>
 
-            {/* Role Breakdown - Tabular, Honest Data */}
-            <div className="pt-4 px-1">
-                <div className="grid grid-cols-4 gap-2 mb-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 px-2">
+            {/* Role Breakdown - Compact Table */}
+            <div className="pt-2 px-1">
+                <div className="grid grid-cols-4 gap-1 mb-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 px-2">
                     <span className="col-span-2 text-left">Role</span>
                     <span className="text-center">Games</span>
                     <span className="text-right">Wins</span>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                     {/* Imposter Row */}
-                    <div className="grid grid-cols-4 gap-2 items-center px-3 py-2.5 rounded-lg bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors group">
-                        <div className="col-span-2 flex items-center gap-2">
-                            <Skull className="w-3.5 h-3.5 text-rose-500/70 group-hover:text-rose-500 transition-colors" />
-                            <span className="text-xs font-bold text-rose-200/80 group-hover:text-rose-100">Imposter</span>
+                    <div className="grid grid-cols-4 gap-1 items-center px-2 py-1.5 rounded-md bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors group">
+                        <div className="col-span-2 flex items-center gap-1.5">
+                            <Skull className="w-3 h-3 text-rose-500/70 group-hover:text-rose-500 transition-colors" />
+                            <span className="text-[10px] font-bold text-rose-200/80 group-hover:text-rose-100">Imposter</span>
                         </div>
-                        <span className="text-center text-sm font-bold text-muted-foreground group-hover:text-foreground">
+                        <span className="text-center text-xs font-bold text-muted-foreground group-hover:text-foreground">
                             {stats.imposter_games}
                         </span>
-                        <span className="text-right text-sm font-bold text-muted-foreground group-hover:text-foreground">
+                        <span className="text-right text-xs font-bold text-muted-foreground group-hover:text-foreground">
                             {stats.imposter_wins}
                         </span>
                     </div>
 
                     {/* Citizen Row */}
-                    <div className="grid grid-cols-4 gap-2 items-center px-3 py-2.5 rounded-lg bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors group">
-                        <div className="col-span-2 flex items-center gap-2">
-                            <User className="w-3.5 h-3.5 text-emerald-500/70 group-hover:text-emerald-500 transition-colors" />
-                            <span className="text-xs font-bold text-emerald-200/80 group-hover:text-emerald-100">Citizen</span>
+                    <div className="grid grid-cols-4 gap-1 items-center px-2 py-1.5 rounded-md bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors group">
+                        <div className="col-span-2 flex items-center gap-1.5">
+                            <User className="w-3 h-3 text-emerald-500/70 group-hover:text-emerald-500 transition-colors" />
+                            <span className="text-[10px] font-bold text-emerald-200/80 group-hover:text-emerald-100">Citizen</span>
                         </div>
-                        <span className="text-center text-sm font-bold text-muted-foreground group-hover:text-foreground">
+                        <span className="text-center text-xs font-bold text-muted-foreground group-hover:text-foreground">
                             {stats.citizen_games}
                         </span>
-                        <span className="text-right text-sm font-bold text-muted-foreground group-hover:text-foreground">
+                        <span className="text-right text-xs font-bold text-muted-foreground group-hover:text-foreground">
                             {stats.citizen_wins}
                         </span>
                     </div>
                 </div>
 
                 {!hasEnoughData && (
-                    <div className="mt-4 text-center">
-                        <p className="text-[10px] text-muted-foreground/30 font-medium">
-                            Play 5 matches to unlock calculated stats
+                    <div className="mt-2 text-center">
+                        <p className="text-[9px] text-muted-foreground/30 font-medium">
+                            Play 5 matches to unlock stats
                         </p>
                     </div>
                 )}
