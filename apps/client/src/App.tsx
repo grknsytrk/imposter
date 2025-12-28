@@ -789,7 +789,12 @@ function App() {
                         <input
                           value={hintInput}
                           onChange={e => setHintInput(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && hintInput.trim() && submitHint(hintInput)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && hintInput.trim()) {
+                              submitHint(hintInput);
+                              setHintInput('');
+                            }
+                          }}
                           placeholder="Type your hint..."
                           className="flex-1 bg-transparent px-4 py-3 font-bold text-card-foreground outline-none uppercase placeholder:text-muted-foreground"
                           autoFocus
