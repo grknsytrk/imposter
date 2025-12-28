@@ -1253,7 +1253,7 @@ function App() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
-                className="premium-card bg-card p-8 w-full max-w-sm shadow-2xl relative"
+                className="premium-card bg-card p-8 w-full max-w-md shadow-2xl relative"
               >
                 {/* Close Button */}
                 <button
