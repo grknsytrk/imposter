@@ -885,7 +885,8 @@ function App() {
                         setSelectedVote(selectedVote === pid ? null : pid); // Toggle or select new
                       }
                     }}
-                    votes={{ ...gameState.votes, ...(selectedVote && !gameState.votes[player?.id || ''] ? { [player?.id || '']: selectedVote } : {}) }}
+                    votes={gameState.votes}
+                    selectedPlayerId={selectedVote}
                     centerContent={
                       <div className="flex flex-col items-center justify-center gap-2">
                         {/* Progress Timer */}

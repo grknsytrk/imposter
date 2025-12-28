@@ -20,6 +20,7 @@ export interface RoundTableProps {
     eliminatedPlayerId?: string;
     className?: string;
     avatars: { id: string; icon: any; label: string }[];
+    selectedPlayerId?: string | null; // Locally selected but not confirmed
 }
 
 export const RoundTable: React.FC<RoundTableProps> = ({
@@ -33,7 +34,8 @@ export const RoundTable: React.FC<RoundTableProps> = ({
     hints = {},
     eliminatedPlayerId,
     className = '',
-    avatars
+    avatars,
+    selectedPlayerId
 }) => {
     const activePlayers = players;
     const radius = 260;
@@ -75,11 +77,13 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                             const isMe = p.id === currentPlayerId;
                             const hasVoted = !!votes[p.id];
                             const isVotedByMe = votes[currentPlayerId || ''] === p.id;
+                            const isSelectedByMe = selectedPlayerId === p.id;
                             const voteCount = Object.values(votes).filter(v => v === p.id).length;
                             const isEliminated = p.isEliminated || p.id === eliminatedPlayerId;
                             const isTurn = p.id === turnPlayerId;
 
-                            // Interaction allowed? Only if player hasn't voted yet
+                            // Interaction allowed? Only if player haven't CONFIRMED vote yet
+                            // (Even if they selected someone, they can still change it until confirmed)
                             const myVoteConfirmed = !!votes[currentPlayerId || ''];
                             const canVote = phase === 'VOTING' && !p.isEliminated && p.id !== currentPlayerId && !myVoteConfirmed;
 
@@ -89,10 +93,10 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                                     initial={{ opacity: 0, scale: 0 }}
                                     animate={{
                                         opacity: 1,
-                                        scale: isTurn ? 1.1 : 1, // Highlight turn
+                                        scale: isTurn || isSelectedByMe ? 1.1 : 1, // Highlight turn or selection
                                         x: p.x,
                                         y: p.y,
-                                        zIndex: hints[p.id] ? 100 : (isMe ? 50 : (isTurn ? 40 : 20))
+                                        zIndex: hints[p.id] ? 100 : (isMe ? 50 : (isTurn || isSelectedByMe ? 40 : 20))
                                     }}
                                     exit={{ opacity: 0, scale: 0 }}
                                     className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
@@ -107,6 +111,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                         ${isMe ? 'z-30' : 'z-20'}
                         ${canVote ? 'cursor-pointer hover:scale-110 hover:-translate-y-2' : ''}
                         ${isVotedByMe ? 'ring-4 ring-rose-500 bg-rose-50 shadow-lg shadow-rose-200' : ''}
+                        ${isSelectedByMe && !isVotedByMe ? 'ring-4 ring-primary bg-primary/10 shadow-lg shadow-primary/30 scale-105' : ''} 
                         ${isEliminated ? 'opacity-50 grayscale' : ''}
                         ${isTurn ? 'ring-4 ring-amber-400 bg-amber-50 shadow-xl shadow-amber-200 scale-105' : ''}
                       `}
@@ -116,6 +121,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                                                 className={`
                           w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-md transition-colors duration-300
                           ${isVotedByMe ? 'bg-rose-100' : 'bg-card border-2 border-border'}
+                          ${isSelectedByMe && !isVotedByMe ? 'bg-primary/20 border-primary' : ''}
                           ${canVote ? 'group-hover:border-rose-400 group-hover:bg-rose-50' : ''}
                           ${isTurn ? 'bg-amber-100 border-amber-300' : ''}
                         `}
@@ -124,6 +130,7 @@ export const RoundTable: React.FC<RoundTableProps> = ({
                                                     className={`
                             w-8 h-8 sm:w-10 sm:h-10 transition-colors
                             ${isVotedByMe ? 'text-rose-500' : 'text-muted-foreground'}
+                            ${isSelectedByMe && !isVotedByMe ? 'text-primary' : ''}
                             ${canVote ? 'group-hover:text-rose-500' : ''}
                             ${isTurn ? 'text-amber-600' : ''}
                           `}
