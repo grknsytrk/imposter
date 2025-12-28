@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { safeStorage } from '../lib/storage';
 
 interface Profile {
     id: string;
@@ -42,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { data: { session } } = await supabase.auth.getSession();
 
         // Check if guest has intentionally logged out - don't auto-login
-        const wasGuestLoggedOut = localStorage.getItem('guest_logged_out') === 'true';
+        const wasGuestLoggedOut = safeStorage.getItem('guest_logged_out') === 'true';
 
         if (session?.user && wasGuestLoggedOut && session.user.is_anonymous) {
             // Guest logged out - don't auto-login, show login page
@@ -59,7 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         supabase.auth.onAuthStateChange(async (_event, session) => {
             // Check logout flag for anonymous users - prevent auto-login after logout
-            const wasGuestLoggedOut = localStorage.getItem('guest_logged_out') === 'true';
+            const wasGuestLoggedOut = safeStorage.getItem('guest_logged_out') === 'true';
 
             if (session?.user?.is_anonymous && wasGuestLoggedOut) {
                 // Guest logged out - don't restore session
@@ -216,7 +217,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Only clear local state so they go back to login page, but session persists in localStorage
         if (user?.is_anonymous) {
             // Set flag to prevent auto-login on page reload
-            localStorage.setItem('guest_logged_out', 'true');
+            safeStorage.setItem('guest_logged_out', 'true');
             // Just clear local state, don't call supabase.auth.signOut()
             set({ user: null, session: null, profile: null });
         } else {
@@ -266,7 +267,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             if (existingSession?.user?.is_anonymous) {
                 // Clear the logout flag - user is logging back in
-                localStorage.removeItem('guest_logged_out');
+                safeStorage.removeItem('guest_logged_out');
                 // Set user/session FIRST so fetchProfile can access it
                 set({ user: existingSession.user, session: existingSession });
                 // Now fetch profile

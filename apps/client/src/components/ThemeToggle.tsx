@@ -1,10 +1,11 @@
 import { Moon, Sun } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { safeStorage } from '../lib/storage';
 
 // Helper to read initial theme
 const getInitialTheme = (): boolean => {
     if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem('theme');
+    const saved = safeStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     return saved === 'dark' || (!saved && prefersDark);
 };
@@ -24,7 +25,7 @@ export const ThemeToggle = () => {
     useEffect(() => {
         if (!isInitialized.current) return; // Skip initial render
         document.documentElement.classList.toggle('dark', isDark);
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        safeStorage.setItem('theme', isDark ? 'dark' : 'light');
     }, [isDark]);
 
     return (
