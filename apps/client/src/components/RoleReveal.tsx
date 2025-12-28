@@ -145,7 +145,7 @@ export const RoleReveal: React.FC<RoleRevealProps> = ({ role, word, category }) 
                                             Blend in. Don't get caught.
                                         </p>
                                         <p className="text-sm text-rose-400 mt-2 font-mono uppercase tracking-widest">
-                                            KILL GOAL: ELIMINATE ALL CITIZENS
+                                            GOAL: SURVIVE WITHOUT BEING EXPOSED
                                         </p>
                                     </div>
                                 ) : (
