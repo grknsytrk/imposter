@@ -41,7 +41,9 @@ describe('Stats Service', () => {
 
         // Set env vars
         process.env.SUPABASE_URL = 'https://mock.supabase.co';
-        process.env.SUPABASE_SERVICE_KEY = 'mock-key';
+        // Test with the variable name user actually has in Railway
+        process.env.SERVICE_ROLE_KEY = 'mock-key';
+        delete process.env.SUPABASE_SERVICE_KEY;
 
         // Dynamic import to ensure env vars are read
         const module = await import('../stats-service');
