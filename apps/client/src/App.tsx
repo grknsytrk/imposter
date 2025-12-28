@@ -10,6 +10,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { RoleReveal } from './components/RoleReveal';
 import { AmbientFireworks } from './components/AmbientFireworks';
+import { PlayerStats } from './components/PlayerStats';
 import {
   Ghost,
   Cat,
@@ -422,6 +423,9 @@ function App() {
                   <Swords className="w-6 h-6 text-card-foreground" />
                   <span className="font-heading font-black text-xl text-card-foreground tracking-wide uppercase">{t('matchmaking.title')}</span>
                 </div>
+
+                {/* Player Stats */}
+                <PlayerStats />
 
                 <motion.button
                   whileHover={{ scale: 1.02, y: -4 }}

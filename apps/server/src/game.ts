@@ -2,6 +2,7 @@ import { Socket, Server } from 'socket.io';
 import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage, GameMode } from '@imposter/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { handleVote } from './engine';
+import { recordGameEnd } from './services/stats-service';
 
 /**
  * Pure function: Oyları sayar ve en çok oy alan oyuncuyu döner.
@@ -332,6 +333,8 @@ export class GameLogic {
 
             case 'GAME_OVER':
                 this.clearRoomTimer(room.id);
+                // Record stats for all players (async, non-blocking)
+                this.recordGameStats(room);
                 break;
         }
 
@@ -488,6 +491,29 @@ export class GameLogic {
         });
 
         this.transitionToPhase(room, 'HINT_ROUND');
+    }
+
+    /**
+     * Records game statistics after game ends.
+     * Async, non-blocking - stats failure doesn't affect game.
+     */
+    private recordGameStats(room: Room): void {
+        if (!room.gameState || !room.gameState.winner) return;
+
+        const players = room.players.map(p => ({
+            odaPlayerId: p.id,
+            odaUserID: p.userId,
+            role: p.role || 'CITIZEN' as 'IMPOSTER' | 'CITIZEN',
+            isEliminated: p.isEliminated || false,
+        }));
+
+        // Fire and forget - don't await
+        recordGameEnd({
+            winner: room.gameState.winner,
+            players,
+        }).catch(err => {
+            console.error('[GameLogic] Stats recording failed:', err);
+        });
     }
 
     handleConnection(socket: Socket, io: Server) {
