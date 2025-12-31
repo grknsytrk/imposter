@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import socketioServer from 'fastify-socket.io';
 import { PROJECT_NAME } from '@imposter/shared';
 import { Server, Socket } from 'socket.io';
@@ -14,11 +15,22 @@ declare module 'fastify' {
 const fastify = Fastify({ logger: true });
 const gameLogic = new GameLogic();
 
+// Enable CORS for admin dashboard
+fastify.register(cors, {
+    origin: true, // Allow all origins in dev
+    methods: ['GET', 'POST']
+});
+
 fastify.register(socketioServer, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"]
     }
+});
+
+// REST API: Live stats for admin dashboard
+fastify.get('/api/stats/live', async () => {
+    return gameLogic.getLiveStats();
 });
 
 fastify.ready(err => {
@@ -40,4 +52,5 @@ const start = async () => {
 };
 
 start();
+
 

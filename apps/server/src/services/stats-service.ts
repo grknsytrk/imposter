@@ -71,6 +71,16 @@ export async function recordGameEnd(result: GameEndResult): Promise<void> {
             console.error(`[StatsService] Failed to update stats for ${player.odaUserID}:`, error);
         }
     }
+
+    // Update daily_stats for trend graphs
+    try {
+        await supabase.rpc('increment_daily_stats', {
+            p_imposter_won: winner === 'IMPOSTER'
+        });
+        console.log('[StatsService] Daily stats updated');
+    } catch (error) {
+        console.error('[StatsService] Failed to update daily stats:', error);
+    }
 }
 
 /**
@@ -97,6 +107,7 @@ async function updatePlayerStats(userId: string, delta: StatsUpdate): Promise<vo
                 imposter_wins: existing.imposter_wins + delta.imposter_wins,
                 citizen_games: existing.citizen_games + delta.citizen_games,
                 citizen_wins: existing.citizen_wins + delta.citizen_wins,
+                last_played_at: new Date().toISOString(),
             })
             .eq('id', userId);
     } else {
