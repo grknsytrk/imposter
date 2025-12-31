@@ -142,6 +142,27 @@ export class GameLogic {
         });
     }
 
+    /**
+     * Get live statistics for admin dashboard
+     * Returns current connected players, active rooms, players in game
+     */
+    getLiveStats() {
+        const totalPlayers = this.players.size;
+        const activeRooms = Array.from(this.rooms.values()).filter(r => r.status !== 'ENDED').length;
+        const playersInGame = Array.from(this.rooms.values())
+            .filter(r => r.status === 'PLAYING')
+            .reduce((acc, r) => acc + r.players.length, 0);
+        const playersInLobby = totalPlayers - playersInGame;
+
+        return {
+            online_players: totalPlayers,
+            active_rooms: activeRooms,
+            players_in_game: playersInGame,
+            players_in_lobby: playersInLobby,
+            timestamp: new Date().toISOString()
+        };
+    }
+
     private clearRoomTimer(roomId: string) {
         const timer = this.timers.get(roomId);
         if (timer) {
