@@ -19,6 +19,7 @@ const supabase = supabaseUrl && supabaseServiceKey
 
 export interface GameEndResult {
     winner: 'IMPOSTER' | 'CITIZENS';
+    category?: string;
     players: Array<{
         odaPlayerId: string;     // Socket room player id
         odaUserID?: string;      // Supabase auth user id (optional - guests may not have)
@@ -46,7 +47,7 @@ export async function recordGameEnd(result: GameEndResult): Promise<void> {
         return;
     }
 
-    const { winner, players } = result;
+    const { winner, players, category } = result;
 
     for (const player of players) {
         // Skip players without user IDs (guests without accounts)
@@ -80,6 +81,19 @@ export async function recordGameEnd(result: GameEndResult): Promise<void> {
         console.log('[StatsService] Daily stats updated');
     } catch (error) {
         console.error('[StatsService] Failed to update daily stats:', error);
+    }
+
+    // Update category stats if category is provided
+    if (category) {
+        try {
+            await supabase.rpc('update_category_stats', {
+                p_category: category,
+                p_winner: winner
+            });
+            console.log(`[StatsService] Category stats updated for ${category}`);
+        } catch (error) {
+            console.error('[StatsService] Failed to update category stats:', error);
+        }
     }
 }
 

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { Users, DoorOpen, Gamepad2, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fetcher } from '@/lib/fetcher'
 
 interface LiveStats {
     online_players: number
@@ -11,32 +12,14 @@ interface LiveStats {
 }
 
 export function LiveStats() {
-    const [stats, setStats] = useState<LiveStats | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+    const { data: stats, error, isLoading } = useSWR<LiveStats>(
+        `${serverUrl}/api/stats/live`,
+        fetcher,
+        { refreshInterval: 5000 }
+    )
 
-    useEffect(() => {
-        fetchLiveStats()
-        const interval = setInterval(fetchLiveStats, 5000) // 5 second polling
-        return () => clearInterval(interval)
-    }, [])
-
-    async function fetchLiveStats() {
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
-
-        try {
-            const response = await fetch(`${serverUrl}/api/stats/live`)
-            if (!response.ok) throw new Error('Failed to fetch')
-            const data = await response.json()
-            setStats(data)
-            setError(null)
-        } catch (err) {
-            setError('Server offline')
-        }
-        setLoading(false)
-    }
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="bg-card rounded-lg p-4 border border-border animate-pulse">
                 <div className="h-6 bg-muted rounded w-32"></div>

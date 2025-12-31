@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { Activity, Gamepad2, Users, TrendingUp, TrendingDown } from 'lucide-react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { supabaseFetcher } from '@/lib/fetcher'
 import { StatsCard } from '@/components/StatsCard'
 import { LiveStats } from '@/components/LiveStats'
 import { ActivePlayersChart } from '@/components/charts/ActivePlayersChart'
 import { GamesPerDayChart } from '@/components/charts/GamesPerDayChart'
 import { RoleBalanceChart } from '@/components/charts/RoleBalanceChart'
+import { CategoryWinChart } from '@/components/charts/CategoryWinChart'
 
 interface DashboardStats {
     total_players: number
@@ -16,45 +17,13 @@ interface DashboardStats {
 }
 
 export function Dashboard() {
-    const [stats, setStats] = useState<DashboardStats | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-    const [error, setError] = useState<string | null>(null)
+    const { data: stats, error, isLoading } = useSWR<DashboardStats>(
+        'v_dashboard_stats',
+        supabaseFetcher,
+        { refreshInterval: 30000 }
+    )
 
-    useEffect(() => {
-        fetchStats()
-        const interval = setInterval(fetchStats, 30000)
-        return () => clearInterval(interval)
-    }, [])
-
-    async function fetchStats() {
-        if (!isSupabaseConfigured() || !supabase) {
-            setError('Supabase not configured - check .env file')
-            setLoading(false)
-            return
-        }
-
-        try {
-            const { data, error: fetchError } = await supabase
-                .from('v_dashboard_stats')
-                .select('*')
-                .single()
-
-            if (fetchError) {
-                setError(`View not found: ${fetchError.message}`)
-            } else if (data) {
-                setStats(data)
-                setLastUpdated(new Date())
-                setError(null)
-            }
-        } catch (err) {
-            console.error('Failed to fetch stats:', err)
-            setError('Connection failed')
-        }
-        setLoading(false)
-    }
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="animate-pulse text-muted-foreground">Loading...</div>
@@ -68,9 +37,8 @@ export function Dashboard() {
                 <h1 className="text-2xl font-bold">Dashboard</h1>
                 <p className="text-sm text-muted-foreground">
                     Game Analytics Overview
-                    {lastUpdated && <span className="ml-2">• Updated {lastUpdated.toLocaleTimeString()}</span>}
                 </p>
-                {error && <p className="text-sm text-yellow-500 mt-2">⚠️ {error}</p>}
+                {error && <p className="text-sm text-yellow-500 mt-2">⚠️ {error.message || 'Error fetching stats'}</p>}
             </header>
 
             {/* Live Status */}
@@ -119,9 +87,14 @@ export function Dashboard() {
                     <GamesPerDayChart />
                 </div>
 
-                <div className="bg-card rounded-lg p-6 border border-border lg:col-span-2">
+                <div className="bg-card rounded-lg p-6 border border-border">
                     <h2 className="text-lg font-semibold mb-4">Role Win Balance</h2>
                     <RoleBalanceChart />
+                </div>
+
+                <div className="bg-card rounded-lg p-6 border border-border">
+                    <h2 className="text-lg font-semibold mb-4">Category Win Stats</h2>
+                    <CategoryWinChart />
                 </div>
             </div>
         </div>

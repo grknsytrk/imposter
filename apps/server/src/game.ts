@@ -532,6 +532,7 @@ export class GameLogic {
         recordGameEnd({
             winner: room.gameState.winner,
             players,
+            category: room.gameState.category,
         }).catch(err => {
             console.error('[GameLogic] Stats recording failed:', err);
         });
