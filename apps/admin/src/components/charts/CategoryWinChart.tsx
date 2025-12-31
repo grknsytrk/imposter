@@ -68,15 +68,17 @@ export function CategoryWinChart() {
                         dataKey="imposter_wins"
                         name="Imposter Wins"
                         stackId="a"
-                        fill="#ef4444" // Red-500
+                        fill="#be123c" // Rose-700
                         radius={[0, 0, 4, 4]}
+                        fillOpacity={0.9}
                     />
                     <Bar
                         dataKey="citizen_wins"
                         name="Citizen Wins"
                         stackId="a"
-                        fill="#3b82f6" // Blue-500
+                        fill="#0ea5e9" // Sky-500
                         radius={[4, 4, 0, 0]}
+                        fillOpacity={0.9}
                     />
                 </BarChart>
             </ResponsiveContainer>
