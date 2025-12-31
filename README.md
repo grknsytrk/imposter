@@ -38,6 +38,15 @@ Among Lies is all about deception and observation:
 - **Voting Phase**: Cast your vote for the person you suspect the most.
 - **Final Result**: See if the Innocents caught the liar or if the Imposter won the day.
 
+## Operator Dashboard
+
+Control the chaos with a powerful, real-time admin interface designed for game operators.
+
+- **Live Operations Center** - Monitor active rooms, online players, and ongoing matches in real-time with pulse-check connectivity.
+- **Deep Analytics** - Visualize player retention, daily engagement, and peak activity hours through interactive charts.
+- **Game Balance Metrics** - Track Imposter vs. Citizen win rates to ensure the game remains fair for both sides.
+- **Dynamic Leaderboards** - Check top performers with filterable rankings for Overall, Imposter, and Citizen mastery.
+
 ## Getting Started
 
 ### Prerequisites
@@ -90,6 +99,7 @@ You'll need Node.js version 20 or higher. The project structure is a monorepo ma
 ```
 .
 ├── apps/
+│   ├── admin/            # The Operator Dashboard (Vite + React)
 │   ├── client/           # The React frontend
 │   │   ├── src/components # Game components (Table, Avatars, etc.)
 │   │   ├── src/pages      # Main views (Home, Auth, Game)

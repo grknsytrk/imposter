@@ -99,7 +99,7 @@ export function Dashboard() {
                     }
                 />
                 <StatsCard
-                    title="Win Rate"
+                    title="Imposter Win Rate"
                     value={`${stats?.global_win_rate ?? 0}%`}
                     icon={stats?.global_win_rate && stats.global_win_rate >= 50
                         ? <TrendingUp className="w-5 h-5" />
