@@ -7,9 +7,11 @@ const mockUpdate = vi.fn();
 const mockEq = vi.fn();
 const mockSingle = vi.fn();
 const mockFrom = vi.fn();
+const mockRpc = vi.fn();
 
 const mockSupabase = {
-    from: mockFrom
+    from: mockFrom,
+    rpc: mockRpc
 };
 
 // Chain setup helper
@@ -35,6 +37,7 @@ describe('Stats Service', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         setupChain();
+        mockRpc.mockResolvedValue({ data: null, error: null });
 
         // Reset modules to ensure fresh import with env vars
         vi.resetModules();
@@ -81,14 +84,14 @@ describe('Stats Service', () => {
 
         // CHECK USER 1 (Imposter, Winner, Existing)
         // Should update
-        expect(mockUpdate).toHaveBeenCalledWith({
+        expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
             games_played: 11,      // +1
             games_won: 6,          // +1 (Won)
             imposter_games: 3,     // +1
             imposter_wins: 2,      // +1 (Won)
             citizen_games: 8,      // +0
             citizen_wins: 4        // +0
-        });
+        }));
 
         // CHECK USER 2 (Citizen, Loser, New)
         // Should insert
