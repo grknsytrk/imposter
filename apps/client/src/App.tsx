@@ -1265,26 +1265,26 @@ function App() {
                   <h3 className="text-2xl font-heading font-black text-card-foreground tracking-wider uppercase">{t('profile.title')}</h3>
                 </div>
 
-                <div className="flex flex-col items-center gap-8">
-                  <div className="w-28 h-28 border-4 border-primary/30 rounded-3xl flex items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 shadow-lg">
-                    <CurrentAvatarIcon className="w-14 h-14 text-primary drop-shadow-md" />
+                <div className="flex flex-col items-center gap-6">
+                  <div className="w-20 h-20 border-4 border-primary/30 rounded-2xl flex items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 shadow-lg">
+                    <CurrentAvatarIcon className="w-10 h-10 text-primary drop-shadow-md" />
                   </div>
 
-                  <div className="flex items-center gap-4 w-full">
-                    <button onClick={prevAvatar} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-muted hover:bg-primary border-b-4 border-border hover:border-yellow-600 text-muted-foreground hover:text-white transition-all active:border-b-0 active:translate-y-1">
-                      <ChevronLeft className="w-6 h-6" />
+                  <div className="flex items-center gap-3 w-full">
+                    <button onClick={prevAvatar} className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-primary border-b-2 border-border hover:border-yellow-600 text-muted-foreground hover:text-white transition-all active:border-b-0 active:translate-y-0.5">
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <div className="flex-1 text-center bg-muted py-3 rounded-xl border-2 border-border">
-                      <span className="font-heading font-black text-xl uppercase text-white">{AVATARS[avatarIndex].label}</span>
+                    <div className="flex-1 text-center bg-muted py-2 rounded-lg border border-border">
+                      <span className="font-heading font-black text-lg uppercase text-white">{AVATARS[avatarIndex].label}</span>
                     </div>
-                    <button onClick={nextAvatar} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-muted hover:bg-primary border-b-4 border-border hover:border-yellow-600 text-muted-foreground hover:text-white transition-all active:border-b-0 active:translate-y-1">
-                      <ChevronRight className="w-6 h-6" />
+                    <button onClick={nextAvatar} className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted hover:bg-primary border-b-2 border-border hover:border-yellow-600 text-muted-foreground hover:text-white transition-all active:border-b-0 active:translate-y-0.5">
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
 
-                  <div className="w-full bg-muted p-4 rounded-2xl border-2 border-border">
-                    <label className="text-[10px] font-black tracking-widest text-white/60 uppercase block mb-2">{t('profile.username')}</label>
-                    <div className="text-2xl font-heading font-black text-white tracking-wide uppercase">
+                  <div className="w-full bg-muted p-3 rounded-xl border border-border">
+                    <label className="text-[9px] font-black tracking-widest text-white/50 uppercase block mb-1">{t('profile.username')}</label>
+                    <div className="text-xl font-heading font-black text-white tracking-wide uppercase">
                       {player?.name}
                     </div>
                   </div>
