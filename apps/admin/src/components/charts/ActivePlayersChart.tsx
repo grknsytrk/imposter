@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from '@/lib/supabase'
 
@@ -8,30 +8,24 @@ interface DailyData {
 }
 
 export function ActivePlayersChart() {
-    const [data, setData] = useState<DailyData[]>([])
+    const { data } = useSWR<DailyData[]>('active_players_daily', async () => {
+        if (!supabase) return []
 
-    useEffect(() => {
-        fetchData()
-    }, [])
-
-    async function fetchData() {
-        if (!supabase) return
-
-        const { data: dailyStats } = await supabase
+        const { data: dailyStats, error } = await supabase
             .from('daily_stats')
             .select('date, active_players')
             .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
             .order('date', { ascending: true })
 
-        if (dailyStats) {
-            setData(dailyStats.map(d => ({
-                date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                active_players: d.active_players
-            })))
-        }
-    }
+        if (error) throw error
 
-    if (data.length === 0) {
+        return (dailyStats || []).map(d => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            active_players: d.active_players
+        }))
+    })
+
+    if (!data || data.length === 0) {
         return (
             <div className="h-64 flex items-center justify-center text-muted-foreground">
                 No data yet

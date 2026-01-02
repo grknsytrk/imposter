@@ -1,6 +1,6 @@
 import useSWR from 'swr'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { supabaseFetcher } from '@/lib/fetcher'
+import { supabaseListFetcher } from '@/lib/fetcher'
 
 interface CategoryStat {
     category: string
@@ -18,7 +18,7 @@ const CUSTOM_TOOLTIP_STYLE = {
 export function CategoryWinChart() {
     const { data, isLoading } = useSWR<CategoryStat[]>(
         'game_category_stats', // Table name
-        supabaseFetcher
+        supabaseListFetcher
     )
 
     if (isLoading) {

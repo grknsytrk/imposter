@@ -160,9 +160,9 @@ export function Leaderboard() {
                                     <tr key={player.id} className="hover:bg-muted/30 transition-colors">
                                         <td className="px-4 py-3">
                                             <span className={`font-bold ${player.rank === 1 ? 'text-yellow-500' :
-                                                    player.rank === 2 ? 'text-gray-400' :
-                                                        player.rank === 3 ? 'text-amber-600' :
-                                                            'text-muted-foreground'
+                                                player.rank === 2 ? 'text-gray-400' :
+                                                    player.rank === 3 ? 'text-amber-600' :
+                                                        'text-muted-foreground'
                                                 }`}>
                                                 #{player.rank}
                                             </span>
@@ -189,8 +189,8 @@ export function Leaderboard() {
                                         <td className="px-4 py-3 text-center font-semibold">{wins}</td>
                                         <td className="px-4 py-3 text-center">
                                             <span className={`px-2 py-1 rounded text-sm ${winRate >= 60 ? 'bg-green-500/20 text-green-400' :
-                                                    winRate >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-red-500/20 text-red-400'
+                                                winRate >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-red-500/20 text-red-400'
                                                 }`}>
                                                 {winRate}%
                                             </span>
