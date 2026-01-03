@@ -71,9 +71,9 @@ export const useFriendStore = create<FriendState>((set, get) => ({
         set({ loading: true });
         try {
             // Validate UUID to prevent SQL injection in .or() string interpolation
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            // RELAXED REGEX: Just check for standard UUID structure (8-4-4-4-12 hex)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             if (!uuidRegex.test(userId)) {
-                set({ loading: false });
                 return;
             }
 
@@ -129,9 +129,10 @@ export const useFriendStore = create<FriendState>((set, get) => ({
                 }
             });
 
-            set({ friends, pendingRequests, sentRequests, loading: false });
+            set({ friends, pendingRequests, sentRequests });
         } catch (error) {
             console.error('Failed to fetch friends:', error);
+        } finally {
             set({ loading: false });
         }
     },
