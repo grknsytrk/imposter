@@ -38,6 +38,7 @@ export type GameMode = 'CLASSIC' | 'BLIND';
 
 // ==================== GAME STATE ====================
 export type GameState = {
+    gameId?: string;                // Unique game identifier for stats idempotency
     phase: GamePhase;
     category: string;
     word: string;

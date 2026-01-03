@@ -11,6 +11,8 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { RoleReveal } from './components/RoleReveal';
 import { AmbientFireworks } from './components/AmbientFireworks';
 import { PlayerStats } from './components/PlayerStats';
+import { FriendList } from './components/FriendList';
+import { InviteNotification } from './components/InviteNotification';
 import {
   Ghost,
   Cat,
@@ -103,6 +105,8 @@ function App() {
   const [isGameModeOpen, setIsGameModeOpen] = useState(false);
   // Rules Modal State
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  // Friends Modal State
+  const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   // Status state
   const [statusIndex, setStatusIndex] = useState(0);
   const [customStatus, setCustomStatus] = useState('');
@@ -243,7 +247,7 @@ function App() {
         }}
       />
 
-      {/* Dynamic Ambient Fireworks */}
+      {/* Ambient Fireworks handles its own presence */}
       <AmbientFireworks />
 
 
@@ -380,6 +384,15 @@ function App() {
 
                 {/* Unified Control Bar */}
                 <div className="flex items-center p-1.5 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+                  {/* Friends */}
+                  <button
+                    onClick={() => setIsFriendsOpen(true)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all relative"
+                    title="Friends"
+                  >
+                    <Users className="w-5 h-5" />
+                  </button>
+
                   {/* Rules */}
                   <button
                     onClick={() => setIsRulesOpen(true)}
@@ -1649,6 +1662,16 @@ function App() {
           )}
         </AnimatePresence>
       </Portal>
+
+      {/* FRIENDS MODAL */}
+      <FriendList
+        isOpen={isFriendsOpen}
+        onClose={() => setIsFriendsOpen(false)}
+        userId={player?.userId}
+      />
+
+      {/* ROOM INVITE NOTIFICATIONS */}
+      <InviteNotification />
 
     </div >
   );

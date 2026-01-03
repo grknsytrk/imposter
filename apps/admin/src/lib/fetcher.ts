@@ -1,6 +1,14 @@
 import { supabase } from '@/lib/supabase'
 
-export const fetcher = (url: string) => fetch(url).then(r => r.json())
+// API key for protected endpoints (set in Vercel/deployment env)
+const apiKey = import.meta.env.VITE_ADMIN_API_KEY || ''
+
+export const fetcher = (url: string) => fetch(url, {
+    headers: apiKey ? { 'X-API-Key': apiKey } : {}
+}).then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    return r.json()
+})
 
 export const supabaseFetcher = async (viewName: string) => {
     if (!supabase) throw new Error('Supabase client not initialized')

@@ -58,6 +58,7 @@ describe('Stats Service', () => {
         // P1 (Imposter) -> Wins
         // P2 (Citizen)  -> Loses
         const result = {
+            gameId: 'game-123',  // Required for idempotency
             winner: 'IMPOSTER',
             players: [
                 { odaPlayerId: 'p1', odaUserID: 'user1', role: 'IMPOSTER', isEliminated: false },
@@ -65,45 +66,22 @@ describe('Stats Service', () => {
             ]
         };
 
-        // Mock getting existing stats (user1 exists)
-        mockSingle.mockResolvedValueOnce({
-            data: {
-                games_played: 10,
-                games_won: 5,
-                imposter_games: 2,
-                imposter_wins: 1,
-                citizen_games: 8,
-                citizen_wins: 4
-            }
-        });
-
-        // Mock getting stats for user2 (does not exist - null)
-        mockSingle.mockResolvedValueOnce({ data: null });
+        // Mock successful game_results insert
+        mockInsert.mockResolvedValueOnce({ error: null });
+        // Mock successful game_participants insert
+        mockInsert.mockResolvedValueOnce({ error: null });
 
         await recordGameEnd(result as any);
 
-        // CHECK USER 1 (Imposter, Winner, Existing)
-        // Should update
-        expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            games_played: 11,      // +1
-            games_won: 6,          // +1 (Won)
-            imposter_games: 3,     // +1
-            imposter_wins: 2,      // +1 (Won)
-            citizen_games: 8,      // +0
-            citizen_wins: 4        // +0
+        // CHECK: game_results insert was called with gameId
+        expect(mockFrom).toHaveBeenCalledWith('game_results');
+        expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
+            id: 'game-123',
+            winner: 'IMPOSTER'
         }));
 
-        // CHECK USER 2 (Citizen, Loser, New)
-        // Should insert
-        expect(mockInsert).toHaveBeenCalledWith({
-            id: 'user2',
-            games_played: 1,
-            games_won: 0,          // Lost
-            imposter_games: 0,
-            imposter_wins: 0,
-            citizen_games: 1,      // +1
-            citizen_wins: 0
-        });
+        // CHECK: game_participants insert was called
+        expect(mockFrom).toHaveBeenCalledWith('game_participants');
     });
 
     it('should update stats for Citizens winner', async () => {
@@ -111,6 +89,7 @@ describe('Stats Service', () => {
         // P1 (Imposter) -> Loses
         // P2 (Citizen)  -> Wins
         const result = {
+            gameId: 'game-456',
             winner: 'CITIZENS',
             players: [
                 { odaPlayerId: 'p1', odaUserID: 'user1', role: 'IMPOSTER', isEliminated: true },
@@ -118,57 +97,54 @@ describe('Stats Service', () => {
             ]
         };
 
-        // Assume both new users
-        mockSingle.mockResolvedValue({ data: null });
+        // Mock successful inserts
+        mockInsert.mockResolvedValue({ error: null });
 
         await recordGameEnd(result as any);
 
-        // CHECK USER 1 (Imposter, Loser)
+        // CHECK: game_results insert was called
+        expect(mockFrom).toHaveBeenCalledWith('game_results');
         expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-            id: 'user1',
-            games_won: 0,
-            imposter_games: 1,
-            imposter_wins: 0
-        }));
-
-        // CHECK USER 2 (Citizen, Winner)
-        expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-            id: 'user2',
-            games_won: 1,
-            citizen_games: 1,
-            citizen_wins: 1
+            id: 'game-456',
+            winner: 'CITIZENS'
         }));
     });
 
     it('should skip players without odaUserID (guests)', async () => {
         const result = {
+            gameId: 'game-guest-test',
             winner: 'CITIZENS',
             players: [
                 { odaPlayerId: 'guest1', role: 'CITIZEN', isEliminated: false } // No odaUserID
             ]
         };
 
+        // Mock game_results insert success
+        mockInsert.mockResolvedValueOnce({ error: null });
+
         await recordGameEnd(result as any);
 
-        expect(mockFrom).not.toHaveBeenCalled();
+        // game_results should be called, but game_participants should not have any players
+        expect(mockFrom).toHaveBeenCalledWith('game_results');
     });
 
     it('should handle Supabase errors gracefully', async () => {
         const result = {
+            gameId: 'game-error-test',
             winner: 'CITIZENS',
             players: [
                 { odaPlayerId: 'p1', odaUserID: 'user1', role: 'CITIZEN', isEliminated: false }
             ]
         };
 
-        // Mock error
-        mockSingle.mockRejectedValue(new Error('DB connection failed'));
+        // Mock game_results insert error
+        mockInsert.mockResolvedValueOnce({ error: { code: '500', message: 'DB connection failed' } });
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
         await recordGameEnd(result as any);
 
         // Function should complete without throwing
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to update stats'), expect.any(Error));
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to insert game result'), expect.anything());
         consoleSpy.mockRestore();
     });
 });

@@ -1,8 +1,23 @@
 import { Socket, Server } from 'socket.io';
-import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage, GameMode } from '@imposter/shared';
+import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage, GameMode, GameStatus } from '@imposter/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { handleVote } from './engine';
 import { recordGameEnd } from './services/stats-service';
+import { AuthenticatedSocket } from './middleware/auth';
+import { checkEventRateLimit } from './middleware/rate-limit';
+import {
+    sendFriendRequest,
+    acceptFriendRequest,
+    declineFriendRequest,
+    removeFriend,
+    blockUser,
+    getFriends,
+    sendRoomInvite,
+    getPendingInvites,
+    respondToInvite,
+    getPendingRequests,
+    Friend
+} from './services/friend-service';
 
 /**
  * Pure function: Oyları sayar ve en çok oy alan oyuncuyu döner.
@@ -121,7 +136,7 @@ export class GameLogic {
     private players: Map<string, Player> = new Map();
     private rooms: Map<string, Room> = new Map();
     private timers: Map<string, NodeJS.Timeout> = new Map();
-    private userSockets: Map<string, string> = new Map(); // userId -> socketId (for single session enforcement)
+    private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set<socketId> (for multi-tab support)
     private io: Server | null = null;
 
     constructor() { }
@@ -140,6 +155,36 @@ export class GameLogic {
                 ownerName: owner?.name || 'Unknown'
             };
         });
+    }
+
+    /**
+     * Sanitizes room object for client broadcast.
+     * Removes sensitive fields: password, userId, internal player data.
+     * SECURITY: Call this before every room_update emit.
+     */
+    private sanitizeRoomForBroadcast(room: Room): Omit<Room, 'password'> & { players: Array<Omit<Player, 'userId'>> } {
+        return {
+            id: room.id,
+            name: room.name,
+            // password EXCLUDED - never send to clients
+            players: room.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                avatar: p.avatar,
+                isReady: p.isReady,
+                role: p.role,
+                isEliminated: p.isEliminated,
+                hint: p.hint,
+                hasVoted: p.hasVoted
+                // userId EXCLUDED - internal identifier
+            })),
+            maxPlayers: room.maxPlayers,
+            ownerId: room.ownerId,
+            status: room.status,
+            gameState: room.gameState,
+            selectedCategory: room.selectedCategory,
+            gameMode: room.gameMode
+        };
     }
 
     /**
@@ -228,7 +273,11 @@ export class GameLogic {
             p.hasVoted = false;
         });
 
+        // Generate unique game ID for stats idempotency
+        const gameId = uuidv4();
+
         return {
+            gameId: gameId,  // For stats idempotency
             phase: 'ROLE_REVEAL',
             category: category.name,
             word: citizenWord,
@@ -360,7 +409,7 @@ export class GameLogic {
         }
 
         this.broadcastGameState(room);
-        this.io?.to(room.id).emit('room_update', room);
+        this.io?.to(room.id).emit('room_update', this.sanitizeRoomForBroadcast(room));
     }
 
     private startHintTurn(room: Room) {
@@ -530,49 +579,172 @@ export class GameLogic {
 
         // Fire and forget - don't await
         recordGameEnd({
+            gameId: room.gameState.gameId || uuidv4(), // Use gameId for idempotency
             winner: room.gameState.winner,
             players,
             category: room.gameState.category,
+            roomId: room.id,
         }).catch(err => {
             console.error('[GameLogic] Stats recording failed:', err);
         });
     }
 
-    handleConnection(socket: Socket, io: Server) {
-        this.io = io;
-        console.log('Client connected:', socket.id);
+    // Helper to notify friends of a user
+    private async notifyFriends(userId: string, event: string, data: any) {
+        if (!this.io) return;
 
-        socket.on('join_game', ({ name, avatar, userId }: { name: string; avatar: string; userId?: string }) => {
-            // Single session enforcement: if same userId already connected, disconnect old socket
-            if (userId) {
-                const existingSocketId = this.userSockets.get(userId);
-                if (existingSocketId && existingSocketId !== socket.id) {
-                    const existingSocket = io.sockets.sockets.get(existingSocketId);
-                    if (existingSocket) {
-                        existingSocket.emit('session_replaced', 'Another session took over');
-                        existingSocket.disconnect(true);
-                        console.log(`Session replaced for user ${userId}: ${existingSocketId} -> ${socket.id}`);
-                    }
+        try {
+            // Fix: Use imported service function and map to IDs
+            const friends = await getFriends(userId);
+            const friendIds = friends.map(f => f.id);
+
+            for (const friendId of friendIds) {
+                const friendSockets = this.userSockets.get(friendId);
+                if (friendSockets) {
+                    friendSockets.forEach(socketId => {
+                        this.io!.to(socketId).emit(event, data);
+                    });
                 }
-                this.userSockets.set(userId, socket.id);
             }
+        } catch (error) {
+            console.error(`[GameService] Error notifying friends for user ${userId}:`, error);
+        }
+    }
+
+    private leaveRoom(socketId: string) {
+        this.rooms.forEach((room, roomId) => {
+            const playerIndex = room.players.findIndex(p => p.id === socketId);
+            if (playerIndex === -1) return;
+
+            const wasOwner = room.ownerId === socketId;
+            room.players.splice(playerIndex, 1);
+
+            if (room.players.length === 0) {
+                this.clearRoomTimer(roomId);
+                this.rooms.delete(roomId);
+                return;
+            }
+
+            // Transfer ownership if needed
+            if (wasOwner) {
+                room.ownerId = room.players[0].id;
+            }
+
+            // CRITICAL: Clean gameState to prevent ghost socket exploits
+            if (room.gameState && room.status === 'PLAYING') {
+                const gs = room.gameState;
+
+                // Remove from turnOrder
+                gs.turnOrder = gs.turnOrder.filter(id => id !== socketId);
+
+                // Remove their votes and votes targeting them
+                delete gs.votes[socketId];
+                Object.keys(gs.votes).forEach(voterId => {
+                    if (gs.votes[voterId] === socketId) {
+                        delete gs.votes[voterId];
+                    }
+                });
+
+                // Remove their hints
+                delete gs.hints[socketId];
+
+                // If they were the imposter and game is active, citizens win immediately
+                if (gs.imposterId === socketId && gs.phase !== 'GAME_OVER') {
+                    gs.winner = 'CITIZENS';
+                    gs.phase = 'GAME_OVER';
+                    room.status = 'ENDED';
+                    this.clearRoomTimer(roomId);
+                    this.recordGameStats(room);
+                    console.log(`[Game] Imposter disconnected in room ${roomId}, citizens win`);
+                }
+
+                // Adjust currentTurnIndex if needed
+                if (gs.turnOrder.length > 0 && gs.currentTurnIndex >= gs.turnOrder.length) {
+                    gs.currentTurnIndex = gs.currentTurnIndex % gs.turnOrder.length;
+                }
+            }
+
+            // If players drop below min during game, reset to lobby
+            if (room.status === 'PLAYING' && room.players.length < GAME_CONFIG.MIN_PLAYERS) {
+                room.status = 'LOBBY';
+                room.gameState = undefined;
+                this.clearRoomTimer(roomId);
+            }
+
+            this.io?.to(roomId).emit('room_update', this.sanitizeRoomForBroadcast(room));
+            this.io?.emit('room_list', this.getRoomList());
+        });
+    }
+
+    handleConnection(socket: AuthenticatedSocket, io: Server) {
+        this.io = io;
+        // userId is now verified and immutable from auth middleware
+        console.log('Client connected:', socket.id, socket.userId ? `(user: ${socket.userId})` : '(guest)');
+
+        // Join game (Connect)
+        socket.on('join_game', async ({ name, avatar }: { name: string; avatar: string }) => {
+            // Rate limit check
+            if (!checkEventRateLimit('join_game', socket.id, socket.userId)) {
+                socket.emit('error', 'RATE_LIMITED');
+                return;
+            }
+
+            // SECURITY: userId comes from verified middleware, not client
+            const userId = socket.userId;
 
             const player: Player = {
                 id: socket.id,
                 name,
-                avatar: avatar || 'ghost',
+                avatar,
                 isReady: false,
-                userId: userId // Store userId for cleanup on disconnect
+                userId: userId || undefined // Verified from JWT, immutable
             };
             this.players.set(socket.id, player);
+
+            // Handle authenticated user presence
+            if (userId) {
+                if (!this.userSockets.has(userId)) {
+                    this.userSockets.set(userId, new Set());
+                }
+                const userSocketSet = this.userSockets.get(userId)!;
+
+                // If this is the FIRST socket key for this user, they just came online
+                if (userSocketSet.size === 0) {
+                    // Notify friends: I am online
+                    this.notifyFriends(userId, 'friend_online', { userId });
+                }
+
+                userSocketSet.add(socket.id);
+
+                // Send INITIAL online friends list to the user
+                try {
+                    const friends = await getFriends(userId);
+                    const onlineFriendIds = friends
+                        .map(f => f.id)
+                        .filter(fid => this.userSockets.has(fid));
+
+                    if (onlineFriendIds.length > 0) {
+                        socket.emit('friends_online_list', onlineFriendIds);
+                    }
+                } catch (err) {
+                    // console.error('Failed to fetch initial online friends', err);
+                }
+            }
+
             socket.emit('player_status', player);
             socket.emit('room_list', this.getRoomList());
-            console.log(`Player ${name} joined the lobby${userId ? ` (userId: ${userId})` : ''}`);
+            console.log(`Player ${player.name} joined the lobby${userId ? ` (userId: ${userId})` : ''}`);
         });
 
         socket.on('create_room', ({ name, password, category, gameMode }: { name: string; password?: string; category?: string; gameMode?: GameMode }) => {
             const player = this.players.get(socket.id);
             if (!player) return;
+
+            // Rate limit check (per-userId if authenticated)
+            if (!checkEventRateLimit('create_room', socket.id, socket.userId)) {
+                socket.emit('error', 'RATE_LIMITED');
+                return;
+            }
 
             const roomId = uuidv4().substring(0, 6).toUpperCase();
             const room: Room = {
@@ -589,7 +761,7 @@ export class GameLogic {
 
             this.rooms.set(roomId, room);
             socket.join(roomId);
-            socket.emit('room_update', room);
+            socket.emit('room_update', this.sanitizeRoomForBroadcast(room));
             io.emit('room_list', this.getRoomList());
             console.log(`Room ${roomId} (${room.name}) created by ${player.name}${category ? ` [Category: ${category}]` : ''}${gameMode ? ` [Mode: ${gameMode}]` : ''}`);
         });
@@ -609,7 +781,7 @@ export class GameLogic {
                         room.players.push(player);
                     }
                     socket.join(roomId);
-                    io.to(roomId).emit('room_update', room);
+                    io.to(roomId).emit('room_update', this.sanitizeRoomForBroadcast(room));
                     io.emit('room_list', this.getRoomList());
                     console.log(`Player ${player.name} joined room ${roomId}`);
                 } else {
@@ -624,43 +796,23 @@ export class GameLogic {
             console.log('Client disconnected:', socket.id);
             const player = this.players.get(socket.id);
 
-            // Clean up userSockets map
-            if (player?.userId) {
-                const currentSocketId = this.userSockets.get(player.userId);
-                // Only delete if this socket is still the active one for this userId
-                if (currentSocketId === socket.id) {
-                    this.userSockets.delete(player.userId);
-                }
-            }
-
-            this.players.delete(socket.id);
-
-            this.rooms.forEach((room, roomId) => {
-                const index = room.players.findIndex(p => p.id === socket.id);
-                if (index !== -1) {
-                    const wasOwner = room.ownerId === socket.id;
-                    room.players.splice(index, 1);
-
-                    if (room.players.length === 0) {
-                        this.clearRoomTimer(roomId);
-                        this.rooms.delete(roomId);
-                    } else {
-                        if (wasOwner) {
-                            room.ownerId = room.players[0].id;
+            if (player) {
+                // Remove from userSockets tracking
+                if (player.userId) {
+                    const userSocketSet = this.userSockets.get(player.userId);
+                    if (userSocketSet) {
+                        userSocketSet.delete(socket.id);
+                        // If this was the LAST socket, they are now offline
+                        if (userSocketSet.size === 0) {
+                            this.userSockets.delete(player.userId);
+                            this.notifyFriends(player.userId, 'friend_offline', { userId: player.userId });
                         }
-
-                        // Oyun devam ediyorsa ve yeterli oyuncu kalmadıysa oyunu bitir
-                        if (room.status === 'PLAYING' && room.players.length < GAME_CONFIG.MIN_PLAYERS) {
-                            room.status = 'LOBBY';
-                            room.gameState = undefined;
-                            this.clearRoomTimer(roomId);
-                        }
-
-                        io.to(roomId).emit('room_update', room);
                     }
-                    io.emit('room_list', this.getRoomList());
                 }
-            });
+
+                this.leaveRoom(socket.id);
+                this.players.delete(socket.id);
+            }
         });
 
         socket.on('leave_room', () => {
@@ -688,7 +840,7 @@ export class GameLogic {
                             this.clearRoomTimer(roomId);
                         }
 
-                        io.to(roomId).emit('room_update', room);
+                        io.to(roomId).emit('room_update', this.sanitizeRoomForBroadcast(room));
                     }
 
                     socket.emit('room_update', null);
@@ -717,7 +869,7 @@ export class GameLogic {
             room.status = 'PLAYING';
             room.gameState = this.initializeGame(room, language || 'en');
 
-            io.to(room.id).emit('room_update', room);
+            io.to(room.id).emit('room_update', this.sanitizeRoomForBroadcast(room));
             io.emit('room_list', this.getRoomList());
 
             // Rol gösterme fazını başlat
@@ -792,7 +944,7 @@ export class GameLogic {
                 if (player) player.hasVoted = true;
 
                 this.broadcastGameState(room);
-                io.to(room.id).emit('room_update', room);
+                io.to(room.id).emit('room_update', this.sanitizeRoomForBroadcast(room));
 
                 // Check if all voted
                 const activeVoters = room.players.filter(p => !p.isEliminated);
@@ -827,7 +979,7 @@ export class GameLogic {
             });
 
             this.clearRoomTimer(room.id);
-            io.to(room.id).emit('room_update', room);
+            io.to(room.id).emit('room_update', this.sanitizeRoomForBroadcast(room));
             io.to(room.id).emit('game_state', null);
             io.emit('room_list', this.getRoomList());
         });
@@ -853,5 +1005,226 @@ export class GameLogic {
         socket.on('get_rooms', () => {
             socket.emit('room_list', this.getRoomList());
         });
+
+        // ============================================
+        // FRIEND SYSTEM EVENTS
+        // ============================================
+
+        // Send friend request
+        socket.on('send_friend_request', async ({ username }: { username: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) {
+                socket.emit('friend_error', 'Must be logged in');
+                return;
+            }
+
+            const result = await sendFriendRequest(player.userId, username);
+            if (result.success) {
+                socket.emit('friend_request_sent', { username });
+                // Notify target if online
+                this.notifyFriendEvent(username, 'friend_request_received', {
+                    fromUsername: player.name,
+                    fromUserId: player.userId
+                });
+            } else {
+                socket.emit('friend_error', result.error);
+            }
+        });
+
+        // Accept friend request
+        socket.on('accept_friend_request', async ({ requestId }: { requestId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const result = await acceptFriendRequest(player.userId, requestId);
+            if (result.success && result.userIds) {
+                // Notify BOTH parties
+                result.userIds.forEach(uid => {
+                    const friendSockets = this.userSockets.get(uid);
+                    if (friendSockets) {
+                        friendSockets.forEach(sid => {
+                            this.io?.to(sid).emit('friend_request_accepted', { requestId });
+                        });
+                    }
+                });
+            } else {
+                socket.emit('friend_error', result.error);
+            }
+        });
+
+        // Decline friend request
+        socket.on('decline_friend_request', async ({ requestId }: { requestId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const result = await declineFriendRequest(player.userId, requestId);
+            if (result.success) {
+                socket.emit('friend_request_declined', { requestId });
+            } else {
+                socket.emit('friend_error', result.error);
+            }
+        });
+
+        // Cancel sent friend request (uses same logic as decline)
+        socket.on('cancel_friend_request', async ({ requestId }: { requestId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            // For canceling, we need to allow the sender to delete
+            // Use removeFriend which deletes the row (works for pending too)
+            const result = await removeFriend(player.userId, requestId);
+            if (result.success) {
+                socket.emit('friend_request_cancelled', { requestId });
+            } else {
+                socket.emit('friend_error', result.error || 'Failed to cancel request');
+            }
+        });
+
+        // Remove friend
+        socket.on('remove_friend', async ({ friendId }: { friendId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const result = await removeFriend(player.userId, friendId);
+            if (result.success) {
+                socket.emit('friend_removed', { friendId });
+            } else {
+                socket.emit('friend_error', result.error);
+            }
+        });
+
+        // Block user
+        socket.on('block_user', async ({ targetId }: { targetId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const result = await blockUser(player.userId, targetId);
+            if (result.success) {
+                socket.emit('user_blocked', { targetId });
+            }
+        });
+
+        // ============================================
+        // ROOM INVITE EVENTS
+        // ============================================
+
+        // Send room invite to friend
+        socket.on('send_room_invite', async ({ friendId }: { friendId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            // Find current room
+            const room = Array.from(this.rooms.values()).find(r =>
+                r.players.some(p => p.id === socket.id)
+            );
+            if (!room) {
+                socket.emit('invite_error', 'You must be in a room');
+                return;
+            }
+
+            const result = await sendRoomInvite(player.userId, friendId, room.id, room.name);
+            if (result.success) {
+                socket.emit('room_invite_sent', { friendId, roomId: room.id });
+                // Push to friend if online
+                this.pushRoomInvite(friendId, {
+                    inviteId: result.inviteId!,
+                    fromUsername: player.name,
+                    roomId: room.id,
+                    roomName: room.name
+                });
+            } else {
+                socket.emit('invite_error', result.error);
+            }
+        });
+
+        // Accept room invite
+        socket.on('accept_room_invite', async ({ inviteId }: { inviteId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const result = await respondToInvite(player.userId, inviteId, true);
+            if (result.success && result.roomId) {
+                // Auto-join the room
+                const room = this.rooms.get(result.roomId);
+                if (room && room.status === 'LOBBY' && room.players.length < room.maxPlayers) {
+                    // Leave current room first
+                    this.rooms.forEach((r, roomId) => {
+                        const idx = r.players.findIndex(p => p.id === socket.id);
+                        if (idx !== -1) {
+                            r.players.splice(idx, 1);
+                            socket.leave(roomId);
+                            if (r.players.length === 0) {
+                                this.rooms.delete(roomId);
+                            } else if (r.ownerId === socket.id) {
+                                r.ownerId = r.players[0].id;
+                            }
+                            io.to(roomId).emit('room_update', this.sanitizeRoomForBroadcast(r));
+                        }
+                    });
+                    // Join new room
+                    room.players.push(player);
+                    socket.join(result.roomId);
+                    io.to(result.roomId).emit('room_update', this.sanitizeRoomForBroadcast(room));
+                    socket.emit('room_update', this.sanitizeRoomForBroadcast(room));
+                    io.emit('room_list', this.getRoomList());
+                }
+            }
+        });
+
+        // Decline room invite
+        socket.on('decline_room_invite', async ({ inviteId }: { inviteId: string }) => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+            await respondToInvite(player.userId, inviteId, false);
+        });
+
+        // Reconnect: replay pending invites
+        socket.on('get_pending_invites', async () => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const invites = await getPendingInvites(player.userId);
+            for (const invite of invites) {
+                socket.emit('room_invite_received', invite);
+            }
+        });
+
+        // Get pending friend requests
+        socket.on('get_pending_requests', async () => {
+            const player = this.players.get(socket.id);
+            if (!player?.userId) return;
+
+            const requests = await getPendingRequests(player.userId);
+            socket.emit('pending_requests', requests);
+        });
+    }
+
+    // Helper: Notify friend by username if online
+    private notifyFriendEvent(username: string, event: string, data: any) {
+        // Find player by username
+        for (const [socketId, player] of this.players) {
+            if (player.name.toLowerCase() === username.toLowerCase()) {
+                this.io?.sockets.sockets.get(socketId)?.emit(event, data);
+                break;
+            }
+        }
+    }
+
+    // Helper: Push room invite to friend by userId
+    private pushRoomInvite(friendUserId: string, invite: any) {
+        // Find sockets by userId
+        const socketIds = this.userSockets.get(friendUserId);
+        if (socketIds) {
+            socketIds.forEach(socketId => {
+                this.io?.sockets.sockets.get(socketId)?.emit('room_invite_received', invite);
+            });
+        }
+    }
+
+    // Get online friend IDs for a user
+
+    // Get online friend IDs for a user
+    getOnlineFriendIds(friendIds: string[]): string[] {
+        return friendIds.filter(id => this.userSockets.has(id));
     }
 }

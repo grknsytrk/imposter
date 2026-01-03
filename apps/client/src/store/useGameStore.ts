@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { Player, Room, ChatMessage, GamePhase, GameMode } from '@imposter/shared';
+import { useFriendStore } from './useFriendStore';
 
 // Client tarafında kullanılan game state (server'dan gelen)
 interface ClientGameState {
@@ -56,16 +57,31 @@ export const useGameStore = create<GameState>((set, get) => ({
     toast: null,
     gameState: null,
 
-    connect: (name: string, avatar: string, userId?: string) => {
+    connect: async (name: string, avatar: string, userId?: string) => {
         if (get().socket) return;
+
+        // Get current session token for authenticated socket connection
+        const { supabase } = await import('../lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
 
         // Production'da farklı domain, development'ta aynı origin
         const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
-        const socket = io(socketUrl, { path: '/socket.io' });
+        const socket = io(socketUrl, {
+            path: '/socket.io',
+            auth: { token }  // Pass JWT in handshake for server-side verification
+        });
 
         socket.on('connect', () => {
             set({ isConnected: true });
-            socket.emit('join_game', { name, avatar, userId });
+            // Note: userId is now verified server-side from JWT, but we still accept 
+            // the parameter for backward compatibility during migration period
+            socket.emit('join_game', { name, avatar });
+
+            // Initial friends fetch if authenticated
+            if (userId) {
+                useFriendStore.getState().fetchFriends(userId);
+            }
         });
 
         // Single session enforcement: another tab took over
@@ -115,6 +131,67 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         socket.on('game_state', (gameState: ClientGameState | null) => {
             set({ gameState });
+        });
+
+        // ============================================
+        // FRIEND & PRESENCE LISTENERS
+        // ============================================
+
+        socket.on('friend_request_received', (data) => {
+            useFriendStore.getState().addPendingRequest({
+                id: data.fromUserId,
+                requestId: data.requestId || ('temp-' + Date.now()),
+                username: data.fromUsername,
+                avatar: 'ghost',
+                status: 'pending',
+                requestedByMe: false,
+                online: true
+            });
+            get().showToast(`Friend request from ${data.fromUsername}`, 'info');
+        });
+
+        socket.on('friend_request_accepted', () => {
+            const player = get().player;
+            if (player?.userId) {
+                useFriendStore.getState().fetchFriends(player.userId);
+            }
+            get().showToast('Friend request accepted!', 'success');
+        });
+
+        socket.on('friend_request_declined', ({ requestId }) => {
+            useFriendStore.getState().removeRequest(requestId);
+        });
+
+        socket.on('friend_removed', ({ friendId }) => {
+            useFriendStore.setState(state => ({
+                friends: state.friends.filter(f => f.id !== friendId)
+            }));
+        });
+
+        socket.on('friend_request_sent', () => {
+            const player = get().player;
+            if (player?.userId) {
+                useFriendStore.getState().fetchFriends(player.userId);
+            }
+        });
+
+        socket.on('friend_online', ({ userId }) => {
+            useFriendStore.getState().setFriendOnline(userId);
+        });
+
+        socket.on('friend_offline', ({ userId }) => {
+            useFriendStore.getState().setFriendOffline(userId);
+        });
+
+        socket.on('friends_online_list', (onlineIds) => {
+            useFriendStore.getState().setOnlineFriends(onlineIds);
+        });
+
+        socket.on('room_invite_received', (invite) => {
+            const added = useFriendStore.getState().addRoomInvite(invite);
+            if (added) {
+                get().showToast(`New room invite from ${invite.fromUsername}`, 'info');
+            }
         });
 
         set({ socket });
