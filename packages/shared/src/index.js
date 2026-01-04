@@ -3,6 +3,12 @@ export const PROJECT_NAME = "Imposter";
 export * from './commands';
 // Re-export phase contract
 export * from './phase';
+// Re-export validation helpers
+export * from './validation';
+// Re-export friend types
+export * from './friend';
+// Re-export friend socket events
+export * from './friend-events';
 export const CATEGORIES = [
     {
         name: 'Animals',

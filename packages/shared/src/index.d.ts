@@ -1,6 +1,9 @@
 export declare const PROJECT_NAME = "Imposter";
 export * from './commands';
 export * from './phase';
+export * from './validation';
+export * from './friend';
+export * from './friend-events';
 export type PlayerRole = 'CITIZEN' | 'IMPOSTER' | null;
 export type Player = {
     id: string;
@@ -17,6 +20,7 @@ export type GamePhase = 'LOBBY' | 'ROLE_REVEAL' | 'HINT_ROUND' | 'DISCUSSION' | 
 export type GameStatus = 'LOBBY' | 'PLAYING' | 'ENDED';
 export type GameMode = 'CLASSIC' | 'BLIND';
 export type GameState = {
+    gameId?: string;
     phase: GamePhase;
     category: string;
     word: string;
