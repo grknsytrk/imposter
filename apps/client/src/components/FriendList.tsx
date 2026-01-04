@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, UserPlus, X, Check, XCircle, Send,
     Circle, UserMinus, MessageCircle, Clock
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { useFriendStore, Friend } from '../store/useFriendStore';
+import { useFriendStore } from '../store/useFriendStore';
 import { useGameStore } from '../store/useGameStore';
+import { FriendView } from '@imposter/shared';
 
 interface FriendListProps {
     isOpen: boolean;
@@ -35,12 +36,16 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
 
     const { socket, room } = useGameStore();
 
-    // Fetch friends when modal opens
-    const handleOpen = async () => {
-        if (userId) {
-            await fetchFriends(userId);
+    // Fetch friends when modal opens - useEffect is more reliable than onAnimationComplete
+    useEffect(() => {
+        if (isOpen && userId) {
+            fetchFriends(userId);
         }
-    };
+        // Cleanup: reset loading state when modal closes (defensive coding)
+        return () => {
+            useFriendStore.setState({ loading: false });
+        };
+    }, [isOpen, userId, fetchFriends]);
 
     const handleAddFriend = () => {
         if (addUsername.trim() && socket) {
@@ -63,7 +68,6 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
                     onClick={onClose}
-                    onAnimationComplete={handleOpen}
                 >
                     <motion.div
                         initial={{ scale: 0.95, opacity: 0 }}
@@ -207,11 +211,11 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                                             </h3>
                                             {onlineFriends.map(friend => (
                                                 <FriendRow
-                                                    key={friend.id}
+                                                    key={friend.userId}
                                                     friend={friend}
                                                     inRoom={!!room}
-                                                    onInvite={() => inviteToRoom(socket, friend.id)}
-                                                    onRemove={() => removeFriend(socket, friend.id)}
+                                                    onInvite={() => inviteToRoom(socket, friend.userId)}
+                                                    onRemove={() => removeFriend(socket, friend.userId)}
                                                 />
                                             ))}
                                         </div>
@@ -225,10 +229,10 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                                             </h3>
                                             {offlineFriends.map(friend => (
                                                 <FriendRow
-                                                    key={friend.id}
+                                                    key={friend.userId}
                                                     friend={friend}
                                                     inRoom={!!room}
-                                                    onRemove={() => removeFriend(socket, friend.id)}
+                                                    onRemove={() => removeFriend(socket, friend.userId)}
                                                 />
                                             ))}
                                         </div>
@@ -247,7 +251,7 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                                     {sentRequests.length > 0 ? (
                                         sentRequests.map(request => (
                                             <div
-                                                key={request.id}
+                                                key={request.requestId}
                                                 className="p-3 bg-muted rounded-xl flex items-center gap-3"
                                             >
                                                 <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
@@ -255,7 +259,7 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="font-bold text-card-foreground">
-                                                        {request.username}
+                                                        {request.user.username}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
                                                         Request pending
@@ -283,7 +287,7 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                                     {pendingRequests.length > 0 ? (
                                         pendingRequests.map(request => (
                                             <div
-                                                key={request.id}
+                                                key={request.requestId}
                                                 className="p-3 bg-muted rounded-xl flex items-center gap-3"
                                             >
                                                 <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -291,7 +295,7 @@ export function FriendList({ isOpen, onClose, userId }: FriendListProps) {
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="font-bold text-card-foreground">
-                                                        {request.username}
+                                                        {request.user.username}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
                                                         wants to be friends
@@ -337,16 +341,17 @@ function FriendRow({
     onInvite,
     onRemove
 }: {
-    friend: Friend;
+    friend: FriendView;
     inRoom: boolean;
     onInvite?: () => void;
     onRemove: () => void;
 }) {
+    const avatar = friend.avatarUrl ?? 'ghost';
     return (
         <div className="p-3 bg-muted/50 hover:bg-muted rounded-xl flex items-center gap-3 transition-colors group">
             <div className="relative">
                 <div className="w-10 h-10 bg-card rounded-lg flex items-center justify-center border border-border">
-                    <span className="text-lg">{friend.avatar === 'ghost' ? '👻' : '😀'}</span>
+                    <span className="text-lg">{avatar === 'ghost' ? '👻' : '😀'}</span>
                 </div>
                 <Circle
                     className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${friend.online ? 'text-emerald-500 fill-emerald-500' : 'text-muted-foreground fill-muted'

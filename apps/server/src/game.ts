@@ -1,7 +1,8 @@
 import { Socket, Server } from 'socket.io';
-import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage, GameMode, GameStatus } from '@imposter/shared';
+import { Player, Room, GameState, GamePhase, CATEGORIES, GAME_CONFIG, ChatMessage, GameMode, GameStatus, FRIEND_ERROR_CODES, FriendErrorCode } from '@imposter/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { handleVote } from './engine';
+import { applyPhaseTransition } from './engine/phase-reducer';
 import { recordGameEnd } from './services/stats-service';
 import { AuthenticatedSocket } from './middleware/auth';
 import { checkEventRateLimit } from './middleware/rate-limit';
@@ -10,6 +11,7 @@ import {
     acceptFriendRequest,
     declineFriendRequest,
     removeFriend,
+    cancelFriendRequest,
     blockUser,
     getFriends,
     sendRoomInvite,
@@ -18,6 +20,36 @@ import {
     getPendingRequests,
     Friend
 } from './services/friend-service';
+
+// ============================================
+// FRIEND ERROR HELPER
+// ============================================
+
+/**
+ * Maps service error strings to standardized error codes
+ */
+function mapToFriendErrorCode(error?: string): FriendErrorCode {
+    if (!error) return FRIEND_ERROR_CODES.DATABASE_ERROR;
+
+    const lowerError = error.toLowerCase();
+
+    if (lowerError.includes('not found')) return FRIEND_ERROR_CODES.REQUEST_NOT_FOUND;
+    if (lowerError.includes('already')) return FRIEND_ERROR_CODES.ALREADY_FRIENDS;
+    if (lowerError.includes('yourself')) return FRIEND_ERROR_CODES.SELF_REQUEST;
+    if (lowerError.includes('not authorized') || lowerError.includes('not part')) return FRIEND_ERROR_CODES.NOT_AUTHORIZED;
+    if (lowerError.includes('already handled')) return FRIEND_ERROR_CODES.REQUEST_ALREADY_HANDLED;
+    if (lowerError.includes('invalid')) return FRIEND_ERROR_CODES.INVALID_USER_ID;
+    if (lowerError.includes('max')) return FRIEND_ERROR_CODES.MAX_FRIENDS_REACHED;
+
+    return FRIEND_ERROR_CODES.DATABASE_ERROR;
+}
+
+/**
+ * Emit structured friend error with code and message
+ */
+function emitFriendError(socket: Socket, code: FriendErrorCode, message?: string) {
+    socket.emit('friend_error', { code, message });
+}
 
 /**
  * Pure function: Oyları sayar ve en çok oy alan oyuncuyu döner.
@@ -346,12 +378,25 @@ export class GameLogic {
     private transitionToPhase(room: Room, phase: GamePhase) {
         if (!room.gameState) return;
 
-        room.gameState.phase = phase;
+        // 1. Pure Logic: Apply phase transition via reducer
+        const result = applyPhaseTransition(room.gameState, phase);
 
+        if (!result.ok) {
+            console.warn(`[Game] Invalid phase transition: ${room.gameState.phase} → ${phase}`);
+            return;
+        }
+
+        room.gameState = result.state;
+
+        // 2. Side Effects: Player mutations (imperative shell)
+        if (phase === 'VOTING') {
+            room.players.forEach(p => p.hasVoted = false);
+        }
+
+        // 3. Side Effects: Timer scheduling (read duration from state)
         switch (phase) {
             case 'ROLE_REVEAL':
-                room.gameState.phaseTimeLeft = GAME_CONFIG.ROLE_REVEAL_TIME;
-                this.startPhaseTimer(room.id, GAME_CONFIG.ROLE_REVEAL_TIME,
+                this.startPhaseTimer(room.id, room.gameState.phaseTimeLeft,
                     () => {
                         room.gameState!.phaseTimeLeft--;
                         this.broadcastGameState(room);
@@ -361,14 +406,11 @@ export class GameLogic {
                 break;
 
             case 'HINT_ROUND':
-                room.gameState.currentTurnIndex = 0;
-                room.gameState.turnTimeLeft = GAME_CONFIG.HINT_TURN_TIME;
                 this.startHintTurn(room);
                 break;
 
             case 'DISCUSSION':
-                room.gameState.phaseTimeLeft = GAME_CONFIG.DISCUSSION_TIME;
-                this.startPhaseTimer(room.id, GAME_CONFIG.DISCUSSION_TIME,
+                this.startPhaseTimer(room.id, room.gameState.phaseTimeLeft,
                     () => {
                         room.gameState!.phaseTimeLeft--;
                         this.broadcastGameState(room);
@@ -378,10 +420,7 @@ export class GameLogic {
                 break;
 
             case 'VOTING':
-                room.gameState.phaseTimeLeft = GAME_CONFIG.VOTING_TIME;
-                room.gameState.votes = {};
-                room.players.forEach(p => p.hasVoted = false);
-                this.startPhaseTimer(room.id, GAME_CONFIG.VOTING_TIME,
+                this.startPhaseTimer(room.id, room.gameState.phaseTimeLeft,
                     () => {
                         room.gameState!.phaseTimeLeft--;
                         this.broadcastGameState(room);
@@ -391,8 +430,7 @@ export class GameLogic {
                 break;
 
             case 'VOTE_RESULT':
-                room.gameState.phaseTimeLeft = GAME_CONFIG.VOTE_RESULT_TIME;
-                this.startPhaseTimer(room.id, GAME_CONFIG.VOTE_RESULT_TIME,
+                this.startPhaseTimer(room.id, room.gameState.phaseTimeLeft,
                     () => {
                         room.gameState!.phaseTimeLeft--;
                         this.broadcastGameState(room);
@@ -403,11 +441,11 @@ export class GameLogic {
 
             case 'GAME_OVER':
                 this.clearRoomTimer(room.id);
-                // Record stats for all players (async, non-blocking)
                 this.recordGameStats(room);
                 break;
         }
 
+        // 4. Broadcast updated state
         this.broadcastGameState(room);
         this.io?.to(room.id).emit('room_update', this.sanitizeRoomForBroadcast(room));
     }
@@ -1014,7 +1052,7 @@ export class GameLogic {
         socket.on('send_friend_request', async ({ username }: { username: string }) => {
             const player = this.players.get(socket.id);
             if (!player?.userId) {
-                socket.emit('friend_error', 'Must be logged in');
+                emitFriendError(socket, FRIEND_ERROR_CODES.NOT_AUTHORIZED, 'Must be logged in');
                 return;
             }
 
@@ -1027,7 +1065,7 @@ export class GameLogic {
                     fromUserId: player.userId
                 });
             } else {
-                socket.emit('friend_error', result.error);
+                emitFriendError(socket, mapToFriendErrorCode(result.error), result.error);
             }
         });
 
@@ -1048,7 +1086,7 @@ export class GameLogic {
                     }
                 });
             } else {
-                socket.emit('friend_error', result.error);
+                emitFriendError(socket, mapToFriendErrorCode(result.error), result.error);
             }
         });
 
@@ -1061,22 +1099,20 @@ export class GameLogic {
             if (result.success) {
                 socket.emit('friend_request_declined', { requestId });
             } else {
-                socket.emit('friend_error', result.error);
+                emitFriendError(socket, mapToFriendErrorCode(result.error), result.error);
             }
         });
 
-        // Cancel sent friend request (uses same logic as decline)
+        // Cancel sent friend request
         socket.on('cancel_friend_request', async ({ requestId }: { requestId: string }) => {
             const player = this.players.get(socket.id);
             if (!player?.userId) return;
 
-            // For canceling, we need to allow the sender to delete
-            // Use removeFriend which deletes the row (works for pending too)
-            const result = await removeFriend(player.userId, requestId);
+            const result = await cancelFriendRequest(player.userId, requestId);
             if (result.success) {
                 socket.emit('friend_request_cancelled', { requestId });
             } else {
-                socket.emit('friend_error', result.error || 'Failed to cancel request');
+                emitFriendError(socket, mapToFriendErrorCode(result.error), result.error || 'Failed to cancel request');
             }
         });
 
@@ -1087,9 +1123,11 @@ export class GameLogic {
 
             const result = await removeFriend(player.userId, friendId);
             if (result.success) {
-                socket.emit('friend_removed', { friendId });
+                // Emit with new naming convention (friendUserId)
+                // TODO: After 2 releases, remove friendId fallback from client
+                socket.emit('friend_removed', { friendUserId: friendId });
             } else {
-                socket.emit('friend_error', result.error);
+                emitFriendError(socket, mapToFriendErrorCode(result.error), result.error);
             }
         });
 

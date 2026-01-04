@@ -1,17 +1,24 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import {
+    isValidUserId,
+    FriendView,
+    FriendRequestDTO
+} from '@imposter/shared';
+import {
+    dbRowToFriendDTO,
+    dbRowToFriendRequestDTO,
+    toFriendView
+} from '../adapters/friendAdapters';
 
-// Types
-export interface Friend {
-    id: string; // User ID
-    requestId: string; // Friendship Row ID
-    username: string;
-    avatar: string;
-    status: 'pending' | 'accepted';
-    requestedByMe: boolean;
-    online?: boolean;
-}
+// ============================================
+// LEGACY TYPES (kept for RoomInvite only - not migrating this PR)
+// ============================================
 
+/**
+ * @deprecated Use RoomInviteDTO from @imposter/shared
+ * Will be removed in separate cleanup PR
+ */
 export interface RoomInvite {
     id: string;
     inviteId?: string;
@@ -23,39 +30,60 @@ export interface RoomInvite {
     expiresAt?: string;
 }
 
-interface FriendState {
-    friends: Friend[];
-    pendingRequests: Friend[];
-    sentRequests: Friend[];
-    pendingInvites: RoomInvite[];
-    onlineUserIds: Set<string>;
-    loading: boolean;
+// ============================================
+// STORE STATE (using shared DTOs)
+// ============================================
 
-    // Seen invite IDs to prevent duplicate toasts
+interface FriendState {
+    // Friends with online status (view model)
+    friends: FriendView[];
+
+    // Pending requests (INCOMING only)
+    pendingRequests: FriendRequestDTO[];
+
+    // Sent requests (OUTGOING only)
+    sentRequests: FriendRequestDTO[];
+
+    // Room invites (legacy, not migrated this PR)
+    pendingInvites: RoomInvite[];
+
+    // Online tracking
+    onlineUserIds: Set<string>;
+
+    loading: boolean;
+    fetchInProgress: boolean;
+    refreshQueued: string | null; // Queued userId for deferred refresh
     seenInviteIds: Set<string>;
 
-    // Actions
+    // ============================================
+    // ACTIONS
+    // ============================================
+
     fetchFriends: (userId: string) => Promise<void>;
     sendFriendRequest: (socket: any, username: string) => void;
+
+    // Request actions (use requestId)
     acceptRequest: (socket: any, requestId: string) => void;
     declineRequest: (socket: any, requestId: string) => void;
-    removeFriend: (socket: any, friendId: string) => void;
     cancelRequest: (socket: any, requestId: string) => void;
-    inviteToRoom: (socket: any, friendId: string) => void;
+
+    // Friend actions (use friendUserId)
+    removeFriend: (socket: any, friendUserId: string) => void;
+    inviteToRoom: (socket: any, friendUserId: string) => void;
 
     // Socket handlers
-    setFriendOnline: (friendId: string) => void;
-    setFriendOffline: (friendId: string) => void;
-    setOnlineFriends: (friendIds: string[]) => void;
-    addPendingRequest: (request: Friend) => void;
+    setFriendOnline: (friendUserId: string) => void;
+    setFriendOffline: (friendUserId: string) => void;
+    setOnlineFriends: (friendUserIds: string[]) => void;
+    addPendingRequest: (request: FriendRequestDTO) => void;
     removeRequest: (requestId: string) => void;
-    addRoomInvite: (invite: RoomInvite) => boolean; // Returns false if duplicate
+    addRoomInvite: (invite: RoomInvite) => boolean;
     removeRoomInvite: (inviteId: string) => void;
     clearInvites: () => void;
 
     // Optimistic update helpers
-    setFriends: (friends: Friend[]) => void;
-    setPendingRequests: (requests: Friend[]) => void;
+    setFriends: (friends: FriendView[]) => void;
+    setPendingRequests: (requests: FriendRequestDTO[]) => void;
 }
 
 export const useFriendStore = create<FriendState>((set, get) => ({
@@ -65,18 +93,25 @@ export const useFriendStore = create<FriendState>((set, get) => ({
     pendingInvites: [],
     onlineUserIds: new Set(),
     loading: false,
+    fetchInProgress: false,
+    refreshQueued: null,
     seenInviteIds: new Set(),
 
     fetchFriends: async (userId: string) => {
-        set({ loading: true });
-        try {
-            // Validate UUID to prevent SQL injection in .or() string interpolation
-            // RELAXED REGEX: Just check for standard UUID structure (8-4-4-4-12 hex)
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            if (!uuidRegex.test(userId)) {
-                return;
-            }
+        // Early validation BEFORE setting loading to prevent stuck state
+        if (!isValidUserId(userId)) {
+            return;
+        }
 
+        // Prevent concurrent fetches - queue refresh if one is in progress
+        if (get().fetchInProgress) {
+            // Queue this refresh for after current fetch completes
+            set({ refreshQueued: userId });
+            return;
+        }
+        set({ loading: true, fetchInProgress: true, refreshQueued: null });
+
+        try {
             // Fetch friends from Supabase
             const { data, error } = await supabase
                 .from('friendships')
@@ -86,6 +121,7 @@ export const useFriendStore = create<FriendState>((set, get) => ({
                     friend_id,
                     status,
                     requested_by,
+                    created_at,
                     user:profiles!friendships_user_id_fkey(id, username, avatar),
                     friend:profiles!friendships_friend_id_fkey(id, username, avatar)
                 `)
@@ -94,46 +130,53 @@ export const useFriendStore = create<FriendState>((set, get) => ({
 
             if (error) throw error;
 
-            const friends: Friend[] = [];
-            const pendingRequests: Friend[] = [];
-            const sentRequests: Friend[] = [];
+            const friends: FriendView[] = [];
+            const pendingRequests: FriendRequestDTO[] = [];
+            const sentRequests: FriendRequestDTO[] = [];
+            const onlineUserIds = get().onlineUserIds;
 
-            data?.forEach((row: any) => {
-                const iAmUserId = row.user_id === userId;
-                // Supabase returns joined relations as arrays
-                const friendProfile = iAmUserId
-                    ? (Array.isArray(row.friend) ? row.friend[0] : row.friend)
-                    : (Array.isArray(row.user) ? row.user[0] : row.user);
-                const requestedByMe = row.requested_by === userId;
-
-                if (!friendProfile) return;
-
-                const friend: Friend = {
-                    id: friendProfile.id,
-                    requestId: row.id,
-                    username: friendProfile.username,
-                    avatar: friendProfile.avatar || 'ghost',
-                    status: row.status as 'pending' | 'accepted',
-                    requestedByMe,
-                    online: get().onlineUserIds.has(friendProfile.id) // Check persistent online state
-                };
-
-                if (row.status === 'accepted') {
-                    friends.push(friend);
-                } else if (row.status === 'pending') {
-                    if (requestedByMe) {
-                        sentRequests.push(friend);
-                    } else {
-                        pendingRequests.push(friend);
-                    }
+            let skipped = 0;
+            for (const row of data ?? []) {
+                // Try accepted friend first
+                const friendDTO = dbRowToFriendDTO(row, userId);
+                if (friendDTO) {
+                    // Enrich with online status (view model)
+                    friends.push(toFriendView(friendDTO, onlineUserIds));
+                    continue;
                 }
-            });
+
+                // Try pending request
+                const requestDTO = dbRowToFriendRequestDTO(row, userId);
+                if (requestDTO) {
+                    if (requestDTO.direction === 'OUTGOING') {
+                        sentRequests.push(requestDTO);
+                    } else {
+                        pendingRequests.push(requestDTO);
+                    }
+                    continue;
+                }
+
+                skipped++;
+            }
+
+            // Debug log for skipped rows (development only)
+            if (skipped > 0 && import.meta.env.DEV) {
+                console.debug(`[FriendStore] skipped ${skipped} invalid rows`);
+            }
 
             set({ friends, pendingRequests, sentRequests });
         } catch (error) {
             console.error('Failed to fetch friends:', error);
         } finally {
-            set({ loading: false });
+            set({ loading: false, fetchInProgress: false });
+
+            // Process queued refresh if any (event storm protection)
+            const queued = get().refreshQueued;
+            if (queued) {
+                set({ refreshQueued: null });
+                // Defer to next tick to avoid stack overflow
+                setTimeout(() => get().fetchFriends(queued), 0);
+            }
         }
     },
 
@@ -145,7 +188,7 @@ export const useFriendStore = create<FriendState>((set, get) => ({
         socket?.emit('accept_friend_request', { requestId });
         // Optimistic: remove from pending
         set(state => ({
-            pendingRequests: state.pendingRequests.filter(r => r.id !== requestId)
+            pendingRequests: state.pendingRequests.filter(r => r.requestId !== requestId)
         }));
     },
 
@@ -153,15 +196,16 @@ export const useFriendStore = create<FriendState>((set, get) => ({
         socket?.emit('decline_friend_request', { requestId });
         // Optimistic: remove from pending
         set(state => ({
-            pendingRequests: state.pendingRequests.filter(r => r.id !== requestId)
+            pendingRequests: state.pendingRequests.filter(r => r.requestId !== requestId)
         }));
     },
 
-    removeFriend: (socket, friendId) => {
-        socket?.emit('remove_friend', { friendId });
-        // Optimistic: remove from friends
+    removeFriend: (socket, friendUserId) => {
+        // Server still expects friendId key (backward compat)
+        socket?.emit('remove_friend', { friendId: friendUserId });
+        // Optimistic: remove from friends using userId
         set(state => ({
-            friends: state.friends.filter(f => f.id !== friendId)
+            friends: state.friends.filter(f => f.userId !== friendUserId)
         }));
     },
 
@@ -169,43 +213,44 @@ export const useFriendStore = create<FriendState>((set, get) => ({
         socket?.emit('cancel_friend_request', { requestId });
         // Optimistic: remove from sent requests
         set(state => ({
-            sentRequests: state.sentRequests.filter(r => r.id !== requestId)
+            sentRequests: state.sentRequests.filter(r => r.requestId !== requestId)
         }));
     },
 
-    inviteToRoom: (socket, friendId) => {
-        socket?.emit('send_room_invite', { friendId });
+    inviteToRoom: (socket, friendUserId) => {
+        // Server still expects friendId key
+        socket?.emit('send_room_invite', { friendId: friendUserId });
     },
 
-    setFriendOnline: (friendId) => {
+    setFriendOnline: (friendUserId) => {
         const newSet = new Set(get().onlineUserIds);
-        newSet.add(friendId);
+        newSet.add(friendUserId);
         set(state => ({
             onlineUserIds: newSet,
             friends: state.friends.map(f =>
-                f.id === friendId ? { ...f, online: true } : f
+                f.userId === friendUserId ? { ...f, online: true } : f
             )
         }));
     },
 
-    setFriendOffline: (friendId) => {
+    setFriendOffline: (friendUserId) => {
         const newSet = new Set(get().onlineUserIds);
-        newSet.delete(friendId);
+        newSet.delete(friendUserId);
         set(state => ({
             onlineUserIds: newSet,
             friends: state.friends.map(f =>
-                f.id === friendId ? { ...f, online: false } : f
+                f.userId === friendUserId ? { ...f, online: false } : f
             )
         }));
     },
 
-    setOnlineFriends: (friendIds: string[]) => {
-        const newSet = new Set(friendIds);
+    setOnlineFriends: (friendUserIds: string[]) => {
+        const newSet = new Set(friendUserIds);
         set(state => ({
             onlineUserIds: newSet,
             friends: state.friends.map(f => ({
                 ...f,
-                online: newSet.has(f.id)
+                online: newSet.has(f.userId)
             }))
         }));
     },
@@ -218,7 +263,7 @@ export const useFriendStore = create<FriendState>((set, get) => ({
 
     removeRequest: (requestId) => {
         set(state => ({
-            pendingRequests: state.pendingRequests.filter(r => r.id !== requestId)
+            pendingRequests: state.pendingRequests.filter(r => r.requestId !== requestId)
         }));
     },
 
@@ -229,6 +274,15 @@ export const useFriendStore = create<FriendState>((set, get) => ({
         // Dedupe check
         if (seenInviteIds.has(inviteId)) {
             return false;
+        }
+
+        // Expiry check - reject expired invites
+        if (invite.expiresAt) {
+            const expiresAt = new Date(invite.expiresAt).getTime();
+            if (expiresAt < Date.now()) {
+                console.log('[FriendStore] Rejected expired invite:', inviteId);
+                return false;
+            }
         }
 
         set({
@@ -253,3 +307,12 @@ export const useFriendStore = create<FriendState>((set, get) => ({
     setFriends: (friends) => set({ friends }),
     setPendingRequests: (requests) => set({ pendingRequests: requests })
 }));
+
+// ============================================
+// LEGACY EXPORT (for backward compatibility)
+// ============================================
+
+/**
+ * @deprecated Use FriendView from @imposter/shared instead
+ */
+export type Friend = FriendView;

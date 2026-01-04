@@ -61,6 +61,7 @@ describe('Friend Service', () => {
     let acceptFriendRequest: any;
     let declineFriendRequest: any;
     let removeFriend: any;
+    let cancelFriendRequest: any;
     let blockUser: any;
     let unblockUser: any;
     let getFriends: any;
@@ -83,6 +84,7 @@ describe('Friend Service', () => {
         acceptFriendRequest = module.acceptFriendRequest;
         declineFriendRequest = module.declineFriendRequest;
         removeFriend = module.removeFriend;
+        cancelFriendRequest = module.cancelFriendRequest;
         blockUser = module.blockUser;
         unblockUser = module.unblockUser;
         getFriends = module.getFriends;
@@ -265,6 +267,73 @@ describe('Friend Service', () => {
             await unblockUser(TEST_UUID_1, TEST_UUID_2);
             expect(mockFrom).toHaveBeenCalledWith('friendships');
             expect(mockDelete).toHaveBeenCalled();
+        });
+    });
+
+    // ============================================
+    // cancelFriendRequest TESTS
+    // ============================================
+
+    describe('cancelFriendRequest', () => {
+        const REQUEST_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+        const THIRD_PARTY = '00000000-0000-4000-a000-000000000003';
+
+        it('success: sender cancels their own pending request', async () => {
+            // Mock delete chain returning 1 row (success)
+            mockSelect.mockResolvedValueOnce({
+                data: [{ id: REQUEST_ID }],
+                error: null
+            });
+
+            const result = await cancelFriendRequest(TEST_UUID_1, REQUEST_ID);
+            expect(result.success).toBe(true);
+            expect(mockFrom).toHaveBeenCalledWith('friendships');
+            expect(mockDelete).toHaveBeenCalled();
+        });
+
+        it('IDOR: cannot cancel someone else\'s request (0 rows)', async () => {
+            // Mock delete chain returning 0 rows (IDOR blocked by requested_by filter)
+            mockSelect.mockResolvedValueOnce({
+                data: [],
+                error: null
+            });
+
+            const result = await cancelFriendRequest(THIRD_PARTY, REQUEST_ID);
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Request not found or already handled');
+        });
+
+        it('already accepted: should fail with not found/handled', async () => {
+            // Mock: status=accepted so .eq('status','pending') filters it out
+            mockSelect.mockResolvedValueOnce({
+                data: [],
+                error: null
+            });
+
+            const result = await cancelFriendRequest(TEST_UUID_1, REQUEST_ID);
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/not found|handled/i);
+        });
+
+        it('not found: nonexistent requestId returns 0 rows', async () => {
+            mockSelect.mockResolvedValueOnce({
+                data: [],
+                error: null
+            });
+
+            const result = await cancelFriendRequest(TEST_UUID_1, 'cccccccc-cccc-4ccc-cccc-cccccccccccc');
+            expect(result.success).toBe(false);
+        });
+
+        it('database error: should return failure', async () => {
+            mockSelect.mockResolvedValueOnce({
+                data: null,
+                error: { code: 'PGRST500', message: 'Internal error' }
+            });
+
+            const result = await cancelFriendRequest(TEST_UUID_1, REQUEST_ID);
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Failed to cancel request');
         });
     });
 });

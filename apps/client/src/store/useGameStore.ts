@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
-import { Player, Room, ChatMessage, GamePhase, GameMode } from '@imposter/shared';
+import { Player, Room, ChatMessage, GamePhase, GameMode, FriendErrorPayload, FRIEND_ERROR_CODES } from '@imposter/shared';
 import { useFriendStore } from './useFriendStore';
 
 // Client tarafında kullanılan game state (server'dan gelen)
@@ -138,14 +138,17 @@ export const useGameStore = create<GameState>((set, get) => ({
         // ============================================
 
         socket.on('friend_request_received', (data) => {
+            // Convert incoming data to FriendRequestDTO format
             useFriendStore.getState().addPendingRequest({
-                id: data.fromUserId,
                 requestId: data.requestId || ('temp-' + Date.now()),
-                username: data.fromUsername,
-                avatar: 'ghost',
+                user: {
+                    userId: data.fromUserId,
+                    username: data.fromUsername,
+                    avatarUrl: null
+                },
+                direction: 'INCOMING',
                 status: 'pending',
-                requestedByMe: false,
-                online: true
+                createdAt: new Date().toISOString()
             });
             get().showToast(`Friend request from ${data.fromUsername}`, 'info');
         });
@@ -162,10 +165,20 @@ export const useGameStore = create<GameState>((set, get) => ({
             useFriendStore.getState().removeRequest(requestId);
         });
 
-        socket.on('friend_removed', ({ friendId }) => {
+        socket.on('friend_removed', (payload: { friendUserId?: string; friendId?: string }) => {
+            // Backward compat: accept both friendUserId (new) and friendId (legacy)
+            const friendUserId = payload.friendUserId ?? payload.friendId;
+            if (!friendUserId) return;
+
+            // Optimistic: immediate UI update using userId
             useFriendStore.setState(state => ({
-                friends: state.friends.filter(f => f.id !== friendId)
+                friends: state.friends.filter(f => f.userId !== friendUserId)
             }));
+            // Reconcile from server for full consistency
+            const userId = get().player?.userId;
+            if (userId) {
+                useFriendStore.getState().fetchFriends(userId);
+            }
         });
 
         socket.on('friend_request_sent', () => {
@@ -187,10 +200,51 @@ export const useGameStore = create<GameState>((set, get) => ({
             useFriendStore.getState().setOnlineFriends(onlineIds);
         });
 
+
         socket.on('room_invite_received', (invite) => {
             const added = useFriendStore.getState().addRoomInvite(invite);
             if (added) {
                 get().showToast(`New room invite from ${invite.fromUsername}`, 'info');
+            }
+        });
+
+        // Friend action error handler - reconciles optimistic updates on failure
+        socket.off('friend_error'); // Prevent duplicate listeners on reconnect
+        socket.on('friend_error', (payload: unknown) => {
+            // Type-safe parsing: handle string (legacy) or structured payload
+            let errorMessage: string;
+
+            if (typeof payload === 'string') {
+                // Legacy string payload (backward compatibility)
+                errorMessage = payload;
+            } else {
+                // Structured payload with code and message
+                const { code, message } = (payload as FriendErrorPayload) || {};
+
+                // Map error codes to user-friendly messages
+                const codeMessages: Record<string, string> = {
+                    [FRIEND_ERROR_CODES.NOT_AUTHORIZED]: 'You must be logged in',
+                    [FRIEND_ERROR_CODES.USER_NOT_FOUND]: 'User not found',
+                    [FRIEND_ERROR_CODES.ALREADY_FRIENDS]: 'Already friends with this user',
+                    [FRIEND_ERROR_CODES.SELF_REQUEST]: 'Cannot send request to yourself',
+                    [FRIEND_ERROR_CODES.REQUEST_NOT_FOUND]: 'Request not found',
+                    [FRIEND_ERROR_CODES.REQUEST_ALREADY_HANDLED]: 'Request already handled',
+                    [FRIEND_ERROR_CODES.MAX_FRIENDS_REACHED]: 'Maximum friends limit reached',
+                    [FRIEND_ERROR_CODES.DATABASE_ERROR]: 'Something went wrong'
+                };
+
+                errorMessage = message || codeMessages[code || ''] || 'Friend action failed';
+            }
+
+            get().showToast(errorMessage, 'error');
+
+            // Reconcile from server truth (with loading guard to prevent spam)
+            const player = get().player;
+            if (player?.userId) {
+                const friendStore = useFriendStore.getState();
+                if (!friendStore.loading) {
+                    friendStore.fetchFriends(player.userId);
+                }
             }
         });
 

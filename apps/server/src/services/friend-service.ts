@@ -6,6 +6,13 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import {
+    isValidUserId,
+    FriendDTO,
+    FriendRequestDTO,
+    PublicUserDTO,
+    RoomInviteDTO
+} from '@imposter/shared';
 
 // Supabase client (server-side with service role)
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -16,9 +23,13 @@ const supabase: SupabaseClient | null = supabaseUrl && supabaseServiceKey
     : null;
 
 // ============================================
-// TYPES
+// LEGACY TYPES (deprecated - use @imposter/shared)
 // ============================================
 
+/**
+ * @deprecated Use FriendDTO or FriendRequestDTO from @imposter/shared
+ * Will be removed in future refactor
+ */
 export interface Friend {
     id: string;
     username: string;
@@ -27,6 +38,10 @@ export interface Friend {
     requestedByMe: boolean;
 }
 
+/**
+ * @deprecated Use RoomInviteDTO from @imposter/shared
+ * Will be removed in future refactor
+ */
 export interface RoomInvite {
     id: string;
     fromUserId: string;
@@ -35,6 +50,67 @@ export interface RoomInvite {
     roomName: string;
     createdAt: string;
     expiresAt: string;
+}
+
+// ============================================
+// ADAPTERS (DB row → DTO conversion)
+// ============================================
+
+/**
+ * Convert DB profile row to PublicUserDTO
+ */
+function toPublicUserDTO(profile: { id: string; username: string; avatar?: string | null }): PublicUserDTO {
+    return {
+        userId: profile.id,
+        username: profile.username,
+        avatarUrl: profile.avatar || null
+    };
+}
+
+/**
+ * Convert DB friendship row to FriendDTO (for accepted friends)
+ */
+export function toFriendDTO(
+    row: any,
+    currentUserId: string
+): FriendDTO {
+    const isUser = row.user_id === currentUserId;
+    const friendProfile = isUser ? row.friend : row.user;
+
+    return {
+        userId: isUser ? row.friend_id : row.user_id,
+        username: friendProfile?.username || 'Unknown',
+        avatarUrl: friendProfile?.avatar || null,
+        status: 'accepted'
+    };
+}
+
+/**
+ * Convert DB friendship row to FriendRequestDTO (for pending requests)
+ */
+export function toFriendRequestDTO(
+    row: any,
+    currentUserId: string
+): FriendRequestDTO {
+    const isIncoming = row.requested_by !== currentUserId;
+    const otherProfile = row.requested_by === row.user_id ? row.user : row.friend;
+
+    // Determine which user is "the other person"
+    const otherUserId = row.requested_by === currentUserId
+        ? (row.user_id === currentUserId ? row.friend_id : row.user_id)
+        : row.requested_by;
+
+    return {
+        requestId: row.id,
+        user: {
+            userId: otherUserId,
+            username: otherProfile?.username || 'Unknown',
+            avatarUrl: otherProfile?.avatar || null
+        },
+        direction: isIncoming ? 'INCOMING' : 'OUTGOING',
+        status: 'pending',
+        createdAt: row.created_at || new Date().toISOString()
+    };
 }
 
 // ============================================
@@ -47,15 +123,6 @@ export interface RoomInvite {
  */
 export function normalizeUserPair(userA: string, userB: string): [string, string] {
     return userA < userB ? [userA, userB] : [userB, userA];
-}
-
-/**
- * Validates UUID format to prevent SQL injection
- * CRITICAL: Call this before any .or() with string interpolation
- */
-function isValidUUID(str: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(str);
 }
 
 const MAX_FRIENDS = 200;
@@ -80,7 +147,7 @@ export async function sendFriendRequest(
     }
 
     // 0. Validate UUID upfront to prevent SQL injection
-    if (!isValidUUID(fromId)) {
+    if (!isValidUserId(fromId)) {
         return { success: false, error: 'Invalid user ID' };
     }
 
@@ -224,7 +291,7 @@ export async function declineFriendRequest(
     }
 
     // Validate UUID to prevent SQL injection
-    if (!isValidUUID(userId)) {
+    if (!isValidUserId(userId)) {
         return { success: false, error: 'Invalid user ID' };
     }
 
@@ -266,6 +333,39 @@ export async function removeFriend(
 
     if (error) {
         return { success: false, error: 'Failed to remove friend' };
+    }
+
+    return { success: true };
+}
+
+/**
+ * Cancel a pending friend request that the user sent
+ * Security: Only the sender (requested_by) can cancel their own request
+ */
+export async function cancelFriendRequest(
+    userId: string,
+    requestId: string
+): Promise<{ success: boolean; error?: string }> {
+    if (!supabase) {
+        return { success: false, error: 'Database not configured' };
+    }
+
+    // Delete pending request where user is the sender
+    // .select('id') allows us to check if any row was actually deleted
+    const { data, error } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('id', requestId)
+        .eq('status', 'pending')
+        .eq('requested_by', userId)  // IDOR prevention: only sender can cancel
+        .select('id');
+
+    if (error) {
+        return { success: false, error: 'Failed to cancel request' };
+    }
+
+    if (!data || data.length === 0) {
+        return { success: false, error: 'Request not found or already handled' };
     }
 
     return { success: true };
@@ -338,7 +438,7 @@ export async function getFriends(userId: string): Promise<Friend[]> {
     if (!supabase) return [];
 
     // Validate UUID to prevent SQL injection
-    if (!isValidUUID(userId)) return [];
+    if (!isValidUserId(userId)) return [];
 
     // Get all accepted friendships where user is either user_id or friend_id
     const { data, error } = await supabase
