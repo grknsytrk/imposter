@@ -75,7 +75,7 @@ You'll need Node.js version 20 or higher. The project structure is a monorepo ma
    npm run dev
    ```
 
-5. Go to `http://localhost:5173` and start playing.
+5. Go to ur localhost and start playing.
 
 ## Tech Stack
 
