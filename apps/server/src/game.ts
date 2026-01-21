@@ -1124,7 +1124,6 @@ export class GameLogic {
             const result = await removeFriend(player.userId, friendId);
             if (result.success) {
                 // Emit with new naming convention (friendUserId)
-                // TODO: After 2 releases, remove friendId fallback from client
                 socket.emit('friend_removed', { friendUserId: friendId });
             } else {
                 emitFriendError(socket, mapToFriendErrorCode(result.error), result.error);

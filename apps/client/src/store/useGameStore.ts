@@ -165,14 +165,10 @@ export const useGameStore = create<GameState>((set, get) => ({
             useFriendStore.getState().removeRequest(requestId);
         });
 
-        socket.on('friend_removed', (payload: { friendUserId?: string; friendId?: string }) => {
-            // Backward compat: accept both friendUserId (new) and friendId (legacy)
-            const friendUserId = payload.friendUserId ?? payload.friendId;
-            if (!friendUserId) return;
-
+        socket.on('friend_removed', (payload: { friendUserId: string }) => {
             // Optimistic: immediate UI update using userId
             useFriendStore.setState(state => ({
-                friends: state.friends.filter(f => f.userId !== friendUserId)
+                friends: state.friends.filter(f => f.userId !== payload.friendUserId)
             }));
             // Reconcile from server for full consistency
             const userId = get().player?.userId;

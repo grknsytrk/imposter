@@ -51,7 +51,7 @@ export interface RoomInviteDTO {
 }
 /**
  * friend_removed event payload
- * Uses friendUserId (not just "friendId") to be explicit
+ * Uses friendUserId to be explicit
  */
 export interface FriendRemovedPayload {
     friendUserId: string;
