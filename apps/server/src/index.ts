@@ -48,6 +48,11 @@ fastify.register(socketioServer, {
     }
 });
 
+// Basic health endpoint (useful for HF Spaces and quick checks)
+fastify.get('/', async () => {
+    return { ok: true, service: PROJECT_NAME };
+});
+
 // REST API: Live stats for admin dashboard (protected)
 fastify.get('/api/stats/live', async (request, reply) => {
     const apiKey = request.headers['x-api-key'];
