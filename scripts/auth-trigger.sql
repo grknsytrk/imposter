@@ -29,11 +29,22 @@ create policy "Users can update own profile."
 -- This ensures every authenticated user has a corresponding row in public.profiles
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  _username text;
 begin
+  -- Get username from metadata, skip if null/empty (anonymous users handle their own profile)
+  _username := new.raw_user_meta_data->>'name';
+  
+  -- For anonymous users or users without a name, skip auto-profile creation
+  -- The client-side signInAnonymously handles profile creation for guests
+  if _username is null or char_length(_username) < 3 then
+    return new;
+  end if;
+  
   insert into public.profiles (id, username, avatar)
   values (
     new.id, 
-    new.raw_user_meta_data->>'name', 
+    _username, 
     'ghost' -- Default avatar
   )
   on conflict (id) do nothing; -- Prevent errors if retry works

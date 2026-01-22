@@ -21,15 +21,29 @@ const gameLogic = new GameLogic();
 // Start rate limit cleanup (every 5 minutes)
 startRateLimitCleanup(300_000);
 
-// Enable CORS for admin dashboard
+const isProd = process.env.NODE_ENV === 'production';
+const clientUrl = process.env.CLIENT_URL;
+
+// Enable CORS (restrict to CLIENT_URL in production)
 fastify.register(cors, {
-    origin: true, // Allow all origins in dev
+    origin: (origin, cb) => {
+        // Same-origin / server-to-server / curl requests may have no origin
+        if (!origin) return cb(null, true);
+
+        // Dev: allow all origins for convenience
+        if (!isProd) return cb(null, true);
+
+        // Prod: only allow the configured frontend origin
+        if (clientUrl && origin === clientUrl) return cb(null, true);
+
+        return cb(new Error('Not allowed by CORS'), false);
+    },
     methods: ['GET', 'POST']
 });
 
 fastify.register(socketioServer, {
     cors: {
-        origin: "*",
+        origin: isProd && clientUrl ? clientUrl : "*",
         methods: ["GET", "POST"]
     }
 });
@@ -60,8 +74,9 @@ fastify.ready(err => {
 
 const start = async () => {
     try {
-        await fastify.listen({ port: 3000, host: '0.0.0.0' });
-        console.log(`${PROJECT_NAME} Server running at http://localhost:3000`);
+        const port = Number(process.env.PORT) || 7860;
+        await fastify.listen({ port, host: '0.0.0.0' });
+        console.log(`${PROJECT_NAME} Server running at http://0.0.0.0:${port}`);
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);

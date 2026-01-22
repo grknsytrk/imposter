@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/.turbo
+**/playwright-report
+**/test-results
+**/.cache
+**/.vite
+**/.DS_Store
+**/.env
+**/.env.*
+apps/client/public/sounds
