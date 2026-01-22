@@ -30,7 +30,7 @@ export const PlayerStats = () => {
                     .from('player_stats')
                     .select('*')
                     .eq('id', user.id)
-                    .single();
+                    .maybeSingle();
 
                 if (!error && data) {
                     setStats(data);
